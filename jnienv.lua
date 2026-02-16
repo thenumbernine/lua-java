@@ -8,6 +8,17 @@ JNIEnv.__name = 'JNIEnv'
 
 function JNIEnv:init(ptr)
 	self.ptr = assert.type(ptr, 'cdata', "expected a JNIEnv*")
+	self.classesLoaded = {}
+
+
+	-- save this up front
+	local java_lang_Class = self:findClass'java/lang/Class'
+
+	-- TODO a way to cache method names, but we've got 3 things to identify them by: name, signature, static
+	java_lang_Class.java_lang_Class_getName = java_lang_Class:getMethod{
+		name = 'getName',
+		sig = {'java.lang.String'},
+	}
 end
 
 function JNIEnv:getVersion()
@@ -15,24 +26,20 @@ function JNIEnv:getVersion()
 end
 
 function JNIEnv:findClass(classpath)
-	local classptr = self.ptr[0].FindClass(self.ptr, classpath)
-	if classptr == nil then
-		error('failed to find class '..tostring(classpath))
+	local classObj = self.classesLoaded[classpath]
+	if not classObj then
+		local classptr = self.ptr[0].FindClass(self.ptr, classpath)
+		if classptr == nil then
+			error('failed to find class '..tostring(classpath))
+		end
+		classObj = JavaClass{
+			env = self,
+			ptr = classptr,
+			classpath = classpath,
+		}
+		self.classesLoaded[classpath] = classObj
 	end
-	return JavaClass{
-		env = self,
-		ptr = classptr,
-	}
-end
-
-function JNIEnv:getObjectClass(classObj)
-	classObj = classObj.ptr or classObj
-	assert.type(classObj, 'cdata')
-	local classClass = self.ptr[0].GetObjectClass(self.ptr, classObj)
-	return JavaClass{
-		env = self,
-		ptr = classClass,
-	}
+	return classObj
 end
 
 function JNIEnv:__tostring()

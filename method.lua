@@ -3,7 +3,8 @@ local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
 local JavaObject = require 'java.object'
-
+local remapArg = require 'java.util'.remapArg
+local remapArgs = require 'java.util'.remapArgs
 
 -- seems this goes somewhere with the sig stuff in java.class
 local prims = table{
@@ -58,16 +59,6 @@ function JavaMethod:init(args)
 	self.static = args.static
 end
 
-local function remapArg(arg)
-	if type(arg) == 'table' then return arg.ptr end
-	return arg
-end
-
-local function remapArgs(...)
-	if select('#', ...) == 0 then return end
-	return remapArg(...), remapArgs(select(2, ...))
-end
-
 function JavaMethod:__call(thisOrClass, ...)
 	local callName
 	if self.static then
@@ -82,17 +73,43 @@ function JavaMethod:__call(thisOrClass, ...)
 	-- otherwise an object comes first
 	local result = self.env.ptr[0][callName](
 		self.env.ptr,
-		assert(remapArg(thisOrClass)),	-- if it's a static method
+		assert(remapArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
 		self.ptr,
 		remapArgs(...)
 	)
-	-- TODO convert / wrap the result
-	local wrapperClass = JavaObject.getWrapper(self.sig[1])
-	return wrapperClass{
-		env = self.env,
-		ptr = result,
-		classpath = self.sig[1],
-	}
+	-- convert / wrap the result
+	return JavaObject.createObjectForClassPath(
+		self.sig[1], {
+			env = self.env,
+			ptr = result,
+			classpath = self.sig[1],
+		}
+	)
+end
+
+-- calls in Java `new classObj(...)`
+-- first arg is the ctor's class obj
+-- rest are ctor args
+-- TODO if I do my own matching of args to stored java reflect methods then I don't need to require the end-user to pick out the ctor method themselves...
+function JavaMethod:newObject(classObj, ...)
+	local classpath = assert(classObj.classpath)
+	local result = self.env.ptr[0].NewObject(
+		self.env.ptr,
+		remapArg(classObj),
+		self.ptr,
+		remapArgs(...)
+	)
+	-- fun fact, for java the ctor has return signature 'void'
+	-- which means the self.sig[1] won't hvae the expected classpath
+	-- which means we have to store/retrieve extra the classpath of the classObj
+	return JavaObject.createObjectForClassPath(
+		classpath,
+		{
+			env = self.env,
+			ptr = result,
+			classpath = assert(classpath),
+		}
+	)
 end
 
 function JavaMethod:__tostring()

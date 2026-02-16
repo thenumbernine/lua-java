@@ -3,6 +3,7 @@ local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
 local JavaMethod = require 'java.method'
+local remapArgs = require 'java.util'.remapArgs
 
 --[[
 getJNISig accepts string for a single arg
@@ -53,6 +54,7 @@ JavaClass.__name = 'JavaClass'
 function JavaClass:init(args)
 	self.env = assert.index(args, 'env')
 	self.ptr = assert.index(args, 'ptr')
+	self.classpath = assert.index(args, 'classpath')
 end
 
 --[[
@@ -89,20 +91,18 @@ function JavaClass:getMethod(args)
 	}
 end
 
+-- calls in java `class.getName()`
 function JavaClass:getName()
-	-- store this for safe keeping
-	-- TODO maybe a java.classesloaded[] table or something
-	JavaClass.java_lang_Class = JavaClass.java_lang_Class 
-		or self.env:findClass'java/lang/Class'
-	
-	JavaClass.java_lang_Class_getName = JavaClass.java_lang_Class_getName
-		or JavaClass.java_lang_Class:getMethod{name='getName', sig={'java.lang.String'}}
-
-	return JavaClass.java_lang_Class_getName(self)
+	return self.env:findClass'java/lang/Class'
+		.java_lang_Class_getName(self)
 end
 
 function JavaClass:__tostring()
-	return self.__name..'('..tostring(self.ptr)..')'
+	return self.__name..'('
+		..tostring(self.classpath)
+		..' '
+		..tostring(self.ptr)
+		..')'
 end
 
 JavaClass.__concat = string.concat

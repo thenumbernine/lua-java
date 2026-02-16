@@ -41,6 +41,15 @@ print('Test:getName()', Test:getName())
 -- TODO is there a way to get a method signature?
 local Test_test = Test:getMethod{name='test', sig={'java.lang.String'}, static=true}
 print('Test.test', Test_test)
+print('Test.test()', Test_test(Test))
 
-local result = Test_test(Test)
-print('Test.test()', result)
+-- try to make a new Test()
+local Test_init = Test:getMethod{name='<init>', sig={}}
+print('Test_init', Test_init)
+
+
+-- call its tostring
+local testObj = Test_init:newObject(Test)
+print('testObj', testObj)
+
+print('testObj toString', testObj:getJavaToString())
