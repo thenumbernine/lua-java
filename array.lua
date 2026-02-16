@@ -23,11 +23,11 @@ function JavaArray:init(args)
 	-- so pick it out here
 	-- better yet, use the arg
 	-- TODO should I be switching all my stored "classpath"s over to JNI-signatures to handle prims as well, and to match with :getClass():getName() ?
-	self.elemClassPath = args.elemClassPath
-		or self.classpath:match'^(.*)%[%]$'
-		or error("didn't provide JavaArray .elemClassPath, and .classpath "..tostring(self.classpath).." did not end in []")
+	self._elemClassPath = args.elemClassPath
+		or self._classpath:match'^(.*)%[%]$'
+		or error("didn't provide JavaArray .elemClassPath, and .classpath "..tostring(self._classpath).." did not end in []")
 
-	local ffiTypes = ffiTypesForPrim[self.elemClassPath]
+	local ffiTypes = ffiTypesForPrim[self._elemClassPath]
 	if ffiTypes then
 		-- or TODO just save this up front for primitives
 		self.elemFFIType = ffiTypes.ctype
@@ -50,7 +50,7 @@ function JavaArray:getElem(i)
 	self._env:_checkExceptions()
 
 	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
-	local getArrayElements = getArrayElementsField[self.elemClassPath]
+	local getArrayElements = getArrayElementsField[self._elemClassPath]
 	if getArrayElements then
 		local arptr = self._env._ptr[0][getArrayElements](self._env._ptr, self._ptr, nil)
 		if arptr == nil then error("array index null pointer exception") end
@@ -58,7 +58,7 @@ function JavaArray:getElem(i)
 		if i < 0 or i >= #self then error("index out of bounds "..tostring(i)) end
 		return ffi.cast(self.elemFFIType_ptr, arptr)[i]
 	else
-		local elemClassPath = self.elemClassPath
+		local elemClassPath = self._elemClassPath
 		return JavaObject.createObjectForClassPath(elemClassPath, {
 			env = self._env,
 			ptr = self._env._ptr[0].GetObjectArrayElement(self._env._ptr, self._ptr, i),
@@ -78,9 +78,9 @@ function JavaArray:setElem(i, v)
 	self._env:_checkExceptions()
 
 	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
-	local setArrayRegion = setArrayRegionField[self.elemClassPath]
+	local setArrayRegion = setArrayRegionField[self._elemClassPath]
 	if setArrayRegion then
-print(setArrayRegion, 'setting array at', i, 'to', v, self.elemClassPath)
+print(setArrayRegion, 'setting array at', i, 'to', v, self._elemClassPath)
 		self._env._ptr[0][setArrayRegion](self._env._ptr, self._ptr, i, 1,
 			self.elemFFIType_1(v)
 		)
@@ -91,7 +91,7 @@ print(setArrayRegion, 'setting array at', i, 'to', v, self.elemClassPath)
 			self._env._ptr,
 			self._ptr,
 			i,
-			self._env:luaToJavaArg(v, self.elemClassPath)
+			self._env:luaToJavaArg(v, self._elemClassPath)
 		)
 	end
 	

@@ -10,7 +10,7 @@ function JavaObject:init(args)
 	self._ptr = assert.index(args, 'ptr')
 
 	-- TODO detect if not provided?
-	self.classpath = assert.index(args, 'classpath')
+	self._classpath = assert.index(args, 'classpath')
 end
 
 -- static helper
@@ -58,7 +58,7 @@ end
 
 function JavaObject:getDebugStr()
 	return self.__name..'('
-		..tostring(self.classpath)
+		..tostring(self._classpath)
 		..' '
 		..tostring(self._ptr)
 		..')'

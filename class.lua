@@ -11,7 +11,7 @@ JavaClass.__name = 'JavaClass'
 function JavaClass:init(args)
 	self._env = assert.index(args, 'env')
 	self._ptr = assert.index(args, 'ptr')
-	self.classpath = assert.index(args, 'classpath')
+	self._classpath = assert.index(args, 'classpath')
 end
 
 --[[
@@ -56,7 +56,7 @@ end
 
 function JavaClass:__tostring()
 	return self.__name..'('
-		..tostring(self.classpath)
+		..tostring(self._classpath)
 		..' '
 		..tostring(self._ptr)
 		..')'

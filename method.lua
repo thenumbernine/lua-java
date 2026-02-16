@@ -34,8 +34,8 @@ JavaMethod.__name = 'JavaMethod'
 function JavaMethod:init(args)
 	self._env = assert.index(args, 'env')		-- JNIEnv
 	self._ptr = assert.index(args, 'ptr')		-- cdata
-	self.sig = assert.index(args, 'sig')		-- sig desc is in require 'java.class' for now
-	self.sig[1] = self.sig[1] or 'void'
+	self._sig = assert.index(args, 'sig')		-- sig desc is in require 'java.class' for now
+	self._sig[1] = self._sig[1] or 'void'
 
 	-- TODO I was holding this to pass to CallStatic*Method calls
 	-- but I geuss the whole idea of the API is that you can switch what class calls a method (so long as its an appropriate interface/subclass/whatever)
@@ -60,11 +60,11 @@ function JavaMethod:__call(thisOrClass, ...)
 	if self.static then
 		returnVoid = callStaticNameForReturnType.void 
 		returnObject = callStaticNameForReturnType.object
-		callName = callStaticNameForReturnType[self.sig[1]] or returnObject
+		callName = callStaticNameForReturnType[self._sig[1]] or returnObject
 	else
 		returnVoid = callNameForReturnType.void 
 		returnObject = callNameForReturnType.object
-		callName = callNameForReturnType[self.sig[1]] or returnObject
+		callName = callNameForReturnType[self._sig[1]] or returnObject
 	end
 --print('callName', callName)
 	-- if it's a static method then a class comes first
@@ -73,7 +73,7 @@ function JavaMethod:__call(thisOrClass, ...)
 		self._env._ptr,
 		assert(self._env:luaToJavaArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
 		self._ptr,
-		self._env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
+		self._env:luaToJavaArgs(2, self._sig, ...)	-- TODO sig as well to know what to convert it to?
 	)
 	
 	self._env:_checkExceptions()
@@ -82,10 +82,10 @@ function JavaMethod:__call(thisOrClass, ...)
 	if callName ~= returnObject then return result end
 	-- convert / wrap the result
 	return JavaObject.createObjectForClassPath(
-		self.sig[1], {
+		self._sig[1], {
 			env = self._env,
 			ptr = result,
-			classpath = self.sig[1],
+			classpath = self._sig[1],
 		}
 	)
 end
@@ -95,15 +95,15 @@ end
 -- rest are ctor args
 -- TODO if I do my own matching of args to stored java reflect methods then I don't need to require the end-user to pick out the ctor method themselves...
 function JavaMethod:newObject(classObj, ...)
-	local classpath = assert(classObj.classpath)
+	local classpath = assert(classObj._classpath)
 	local result = self._env._ptr[0].NewObject(
 		self._env._ptr,
 		self._env:luaToJavaArg(classObj),
 		self._ptr,
-		self._env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
+		self._env:luaToJavaArgs(2, self._sig, ...)	-- TODO sig as well to know what to convert it to?
 	)
 	-- fun fact, for java the ctor has return signature 'void'
-	-- which means the self.sig[1] won't hvae the expected classpath
+	-- which means the self._sig[1] won't hvae the expected classpath
 	-- which means we have to store/retrieve extra the classpath of the classObj
 	return JavaObject.createObjectForClassPath(
 		classpath,
