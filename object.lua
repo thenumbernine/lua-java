@@ -18,9 +18,11 @@ function JavaObject.createObjectForClassPath(classpath, args)
 	if classpath == 'java/lang/String' then
 		return require 'java.string'(args)
 	-- I can't tell how I should format the classpath
-	elseif classpath:match'^%[' 
-	or classpath:match'%[%]$'
-	then
+	elseif classpath:match'^%[' then
+		error("dont' use jni signatures for classpaths") 
+		return require 'java.array'(args)
+	elseif classpath:match'%[%]$' then
+		args.elemClassPath = args.elemClassPath or classpath:sub(1, -3)
 		return require 'java.array'(args)
 	end
 	return JavaObject(args)
