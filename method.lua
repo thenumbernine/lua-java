@@ -63,7 +63,7 @@ function JavaMethod:__call(thisOrClass, ...)
 		self.env.ptr,
 		assert(self.env:luaToJavaArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
 		self.ptr,
-		self.env:luaToJavaArgs(...)
+		self.env:luaToJavaArgs(...)	-- TODO sig as well to know what to convert it to?
 	)
 	-- convert / wrap the result
 	return JavaObject.createObjectForClassPath(
@@ -85,7 +85,7 @@ function JavaMethod:newObject(classObj, ...)
 		self.env.ptr,
 		self.env:luaToJavaArg(classObj),
 		self.ptr,
-		self.env:luaToJavaArgs(...)
+		self.env:luaToJavaArgs(...)	-- TODO sig as well to know what to convert it to?
 	)
 	-- fun fact, for java the ctor has return signature 'void'
 	-- which means the self.sig[1] won't hvae the expected classpath

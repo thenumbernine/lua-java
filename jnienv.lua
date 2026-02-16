@@ -128,6 +128,9 @@ function JNIEnv:luaToJavaArg(arg)
 		return self:newStr(arg).ptr
 	elseif t == 'cdata' then
 		return arg
+	elseif t == 'number' then
+		-- TODO will vararg know how to convert things?
+		return arg
 	end
 	error("idk how to convert arg from Lua type "..t)
 end
