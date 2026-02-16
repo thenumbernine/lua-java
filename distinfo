@@ -1,14 +1,22 @@
-generateBindings = function()
-	return {
-		{
-			-- alright now looks like I have to figure out how to setup the NDK env and use its cross-compiler, otherwise my arch stuff will be wrong
-			-- $ANDROID_SDK/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
-			-- but i'm lazy so for now I'll just set the path
-			includeSystemDirs = {
-				os.home()..'/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include',
-			},
-			inc = '<jni.h>',
-			out = 'jni.lua',
-		}
+--------------------------------------------
+-- generated with dist/build-distinfo.rua --
+--------------------------------------------
+name = "jni"
+files = {
+	"README.md",
+	"distinfo",
+	"ffi/jni.lua",
+	"jni.lua",
+}
+generateBindings = ||{
+	{
+		-- alright now looks like I have to figure out how to setup the NDK env and use its cross-compiler, otherwise my arch stuff will be wrong
+		-- $ANDROID_SDK/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+		-- but i'm lazy so for now I'll just set the path
+		includeSystemDirs = {
+			os.home()..'/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include',
+		},
+		inc = '<jni.h>',
+		out = 'jni.lua',
 	}
-end
+}
