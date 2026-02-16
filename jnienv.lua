@@ -17,7 +17,7 @@ function JNIEnv:init(ptr)
 	-- TODO a way to cache method names, but we've got 3 things to identify them by: name, signature, static
 	java_lang_Class.java_lang_Class_getName = java_lang_Class:getMethod{
 		name = 'getName',
-		sig = {'java.lang.String'},
+		sig = {'java/lang/String'},
 	}
 end
 

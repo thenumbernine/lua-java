@@ -25,7 +25,7 @@ JavaObject.__concat = string.concat
 
 -- static helper function for getting the correct JavaObject subclass depending on the classpath
 function JavaObject.getWrapper(classpath)
-	if classpath == 'java.lang.String' then
+	if classpath == 'java/lang/String' then
 		-- TODO I *could* fully-qualify all these in some directory namespace, that'd be the Java thing to do ....
 		return require 'java.string'
 	end
@@ -60,7 +60,7 @@ function JavaObject:getJavaToString()
 	local classObj = self:getClass()
 	local toString = classObj:getMethod{
 		name = 'toString',
-		sig = {'java.lang.String'},
+		sig = {'java/lang/String'},
 	}
 	return toString(self) 
 end

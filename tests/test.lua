@@ -39,7 +39,7 @@ print('Test:getName()', Test:getName())
 
 --public static String test() { return "Testing"; }
 -- TODO is there a way to get a method signature?
-local Test_test = Test:getMethod{name='test', sig={'java.lang.String'}, static=true}
+local Test_test = Test:getMethod{name='test', sig={'java/lang/String'}, static=true}
 print('Test.test', Test_test)
 print('Test.test()', Test_test(Test))
 

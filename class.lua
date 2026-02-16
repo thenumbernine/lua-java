@@ -36,7 +36,7 @@ local function getJNISigArg(s)
 			double = 'D',
 			void = 'V',
 		})[s] 
-		or 'L'..s:gsub('%.', '/')..';'
+		or 'L'..s..';'
 	)
 end
 local function getJNISig(sig)
