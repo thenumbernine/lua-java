@@ -32,7 +32,7 @@ local JavaMethod = class()
 JavaMethod.__name = 'JavaMethod'
 
 function JavaMethod:init(args)
-	self.env = assert.index(args, 'env')		-- JNIEnv
+	self._env = assert.index(args, 'env')		-- JNIEnv
 	self.ptr = assert.index(args, 'ptr')		-- cdata
 	self.sig = assert.index(args, 'sig')		-- sig desc is in require 'java.class' for now
 	self.sig[1] = self.sig[1] or 'void'
@@ -54,7 +54,7 @@ function JavaMethod:__call(thisOrClass, ...)
 	-- but I don't want them messing with my stuff
 	-- but I don't want to check exceptiosn twice
 	-- but I might as well, to be safe
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 
 	local callName, returnVoid, returnObject
 	if self.static then
@@ -69,21 +69,21 @@ function JavaMethod:__call(thisOrClass, ...)
 --print('callName', callName)
 	-- if it's a static method then a class comes first
 	-- otherwise an object comes first
-	local result = self.env.ptr[0][callName](
-		self.env.ptr,
-		assert(self.env:luaToJavaArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
+	local result = self._env.ptr[0][callName](
+		self._env.ptr,
+		assert(self._env:luaToJavaArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
 		self.ptr,
-		self.env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
+		self._env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
 	)
 	
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 
 	if callName == returnVoid then return end
 	if callName ~= returnObject then return result end
 	-- convert / wrap the result
 	return JavaObject.createObjectForClassPath(
 		self.sig[1], {
-			env = self.env,
+			env = self._env,
 			ptr = result,
 			classpath = self.sig[1],
 		}
@@ -96,11 +96,11 @@ end
 -- TODO if I do my own matching of args to stored java reflect methods then I don't need to require the end-user to pick out the ctor method themselves...
 function JavaMethod:newObject(classObj, ...)
 	local classpath = assert(classObj.classpath)
-	local result = self.env.ptr[0].NewObject(
-		self.env.ptr,
-		self.env:luaToJavaArg(classObj),
+	local result = self._env.ptr[0].NewObject(
+		self._env.ptr,
+		self._env:luaToJavaArg(classObj),
 		self.ptr,
-		self.env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
+		self._env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
 	)
 	-- fun fact, for java the ctor has return signature 'void'
 	-- which means the self.sig[1] won't hvae the expected classpath
@@ -108,7 +108,7 @@ function JavaMethod:newObject(classObj, ...)
 	return JavaObject.createObjectForClassPath(
 		classpath,
 		{
-			env = self.env,
+			env = self._env,
 			ptr = result,
 			classpath = assert(classpath),
 		}

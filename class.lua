@@ -9,7 +9,7 @@ local JavaClass = class()
 JavaClass.__name = 'JavaClass'
 
 function JavaClass:init(args)
-	self.env = assert.index(args, 'env')
+	self._env = assert.index(args, 'env')
 	self.ptr = assert.index(args, 'ptr')
 	self.classpath = assert.index(args, 'classpath')
 end
@@ -32,15 +32,15 @@ function JavaClass:getMethod(args)
 
 	local method
 	if static then
-		method = self.env.ptr[0].GetStaticMethodID(self.env.ptr, self.ptr, funcname, sigstr)
+		method = self._env.ptr[0].GetStaticMethodID(self._env.ptr, self.ptr, funcname, sigstr)
 	else
-		method = self.env.ptr[0].GetMethodID(self.env.ptr, self.ptr, funcname, sigstr)
+		method = self._env.ptr[0].GetMethodID(self._env.ptr, self.ptr, funcname, sigstr)
 	end
 	if method == nil then
 		error("failed to find "..tostring(funcname)..' '..tostring(sigstr))
 	end
 	return JavaMethod{
-		env = self.env,
+		env = self._env,
 		class = self,
 		ptr = method,
 		sig = sig,
@@ -50,7 +50,7 @@ end
 
 -- calls in java `class.getName()`
 function JavaClass:getName()
-	return self.env:findClass'java/lang/Class'
+	return self._env:_class'java/lang/Class'
 		.java_lang_Class_getName(self)
 end
 

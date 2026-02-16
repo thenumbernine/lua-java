@@ -5,14 +5,14 @@ local JavaString = JavaObject:subclass()
 JavaString.__name = 'JavaString'
 
 function JavaString:__tostring()
-	local str = self.env.ptr[0].GetStringUTFChars(self.env.ptr, self.ptr, nil)
+	local str = self._env.ptr[0].GetStringUTFChars(self._env.ptr, self.ptr, nil)
 	local luastr = str ~= nil and ffi.string(str) or '(null)'
-	self.env.ptr[0].ReleaseStringUTFChars(self.env.ptr, self.ptr, str)
+	self._env.ptr[0].ReleaseStringUTFChars(self._env.ptr, self.ptr, str)
 	return luastr
 end
 
 function JavaString:__len()
-	return self.env.ptr[0].GetStringLength(self.env.ptr, self.ptr)
+	return self._env.ptr[0].GetStringLength(self._env.ptr, self.ptr)
 end
 
 return JavaString

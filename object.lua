@@ -6,7 +6,7 @@ local JavaObject = class()
 JavaObject.__name = 'JavaObject'
 
 function JavaObject:init(args)
-	self.env = assert.index(args, 'env')
+	self._env = assert.index(args, 'env')
 	self.ptr = assert.index(args, 'ptr')
 
 	-- TODO detect if not provided?
@@ -34,10 +34,10 @@ end
 
 -- gets a JavaClass wrapping the java call `obj.getClass()`
 function JavaObject:getClass()
-	local classpath, jclass = self.env:_getObjClassPath(self.ptr)
+	local classpath, jclass = self._env:_getObjClassPath(self.ptr)
 	local JavaClass = require 'java.class'
 	return JavaClass{
-		env = self.env,
+		env = self._env,
 		ptr = jclass,
 		classpath = classpath,
 	}

@@ -14,11 +14,11 @@ JNIEnv.__name = 'JNIEnv'
 
 function JNIEnv:init(ptr)
 	self.ptr = assert.type(ptr, 'cdata', "expected a JNIEnv*")
-	self.classesLoaded = {}
+	self._classesLoaded = {}
 
 
 	-- save this up front
-	local java_lang_Class = self:findClass'java/lang/Class'
+	local java_lang_Class = self:_class'java/lang/Class'
 
 	-- TODO a way to cache method names, but we've got 3 things to identify them by: name, signature, static
 	java_lang_Class.java_lang_Class_getName = java_lang_Class:getMethod{
@@ -31,8 +31,8 @@ function JNIEnv:getVersion()
 	return self.ptr[0].GetVersion(self.ptr)
 end
 
-function JNIEnv:findClass(classpath)
-	local classObj = self.classesLoaded[classpath]
+function JNIEnv:_class(classpath)
+	local classObj = self._classesLoaded[classpath]
 	if not classObj then
 		local classptr = self.ptr[0].FindClass(self.ptr, classpath)
 		if classptr == nil then
@@ -43,7 +43,7 @@ function JNIEnv:findClass(classpath)
 			ptr = classptr,
 			classpath = classpath,
 		}
-		self.classesLoaded[classpath] = classObj
+		self._classesLoaded[classpath] = classObj
 	end
 	return classObj
 end
@@ -88,12 +88,11 @@ function JNIEnv:_newArray(jtype, length, objInit)
 	local obj
 	if field == 'NewObjectArray' then
 		-- TODO only expect classpath, or should I give an option for a JavaClass or a jclass?
-		local jclassObj = self:findClass(jtype)
+		local jclassObj = self:_class(jtype)
 		-- TODO objInit as JavaObject, but how to encode null?
 		-- am I going to need a java.null placeholder object?
 		obj = self.ptr[0].NewObjectArray(self.ptr, length, jclassObj.ptr, objInit)
 	else
-print(field)	
 		obj = self.ptr[0][field](self.ptr, length)
 	end
 
@@ -126,7 +125,7 @@ end
 -- get a classname for a jobject pointer
 function JNIEnv:_getObjClassPath(objPtr)
 	local jclass = self:_getObjClass(objPtr)
-	local java_lang_Class = self:findClass'java/lang/Class'
+	local java_lang_Class = self:_class'java/lang/Class'
 	local classpath = java_lang_Class.java_lang_Class_getName(jclass)
 	return classpath, jclass
 end

@@ -28,9 +28,9 @@ local J = jvm.jniEnv
 print('JNIEnv', J)
 
 --public class Test {
-local Test = J:findClass(classname)
+local Test = J:_class(classname)
 print('Test', Test)
--- J:findClass returns a JavaClass wrapper to a jclass pointer
+-- J:_class returns a JavaClass wrapper to a jclass pointer
 -- so Test.ptr is a ... jobject ... of the class
 
 print('Test:getName()', Test:getName())

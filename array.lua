@@ -37,7 +37,7 @@ function JavaArray:init(args)
 end
 
 function JavaArray:__len()
-	return self.env.ptr[0].GetArrayLength(self.env.ptr, self.ptr)
+	return self._env.ptr[0].GetArrayLength(self._env.ptr, self.ptr)
 end
 
 
@@ -47,12 +47,12 @@ end):setmetatable(nil)
 
 -- I'd override __index, but that will bring with it a world of hurt....
 function JavaArray:getElem(i)
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 
 	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
 	local getArrayElements = getArrayElementsField[self.elemClassPath]
 	if getArrayElements then
-		local arptr = self.env.ptr[0][getArrayElements](self.env.ptr, self.ptr, nil)
+		local arptr = self._env.ptr[0][getArrayElements](self._env.ptr, self.ptr, nil)
 		if arptr == nil then error("array index null pointer exception") end
 		-- TODO throw a real Java out of bounds exception
 		if i < 0 or i >= #self then error("index out of bounds "..tostring(i)) end
@@ -60,13 +60,13 @@ function JavaArray:getElem(i)
 	else
 		local elemClassPath = self.elemClassPath
 		return JavaObject.createObjectForClassPath(elemClassPath, {
-			env = self.env,
-			ptr = self.env.ptr[0].GetObjectArrayElement(self.env.ptr, self.ptr, i),
+			env = self._env,
+			ptr = self._env.ptr[0].GetObjectArrayElement(self._env.ptr, self.ptr, i),
 			classpath = elemClassPath,
 		})
 	end
 
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 end
 
 local setArrayRegionField = prims:mapi(function(name)
@@ -75,27 +75,27 @@ end):setmetatable(nil)
 
 
 function JavaArray:setElem(i, v)
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 
 	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
 	local setArrayRegion = setArrayRegionField[self.elemClassPath]
 	if setArrayRegion then
 print(setArrayRegion, 'setting array at', i, 'to', v, self.elemClassPath)
-		self.env.ptr[0][setArrayRegion](self.env.ptr, self.ptr, i, 1,
+		self._env.ptr[0][setArrayRegion](self._env.ptr, self.ptr, i, 1,
 			self.elemFFIType_1(v)
 		)
 	else
 		-- another one of these primitive array problems
 		-- the setter will depend on what the underlying primitive type is.
-		self.env.ptr[0].SetObjectArrayElement(
-			self.env.ptr,
+		self._env.ptr[0].SetObjectArrayElement(
+			self._env.ptr,
 			self.ptr,
 			i,
-			self.env:luaToJavaArg(v, self.elemClassPath)
+			self._env:luaToJavaArg(v, self.elemClassPath)
 		)
 	end
 	
-	self.env:_checkExceptions()
+	self._env:_checkExceptions()
 end
 
 return JavaArray
