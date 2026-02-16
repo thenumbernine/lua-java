@@ -3,8 +3,12 @@ local assert = require 'ext.assert'
 local JavaObject = require 'java.object'
 local prims = require 'java.util'.prims
 
-local isPrimitive = prims:mapi(function(name)
-	return true, name
+local ffiTypesForPrim = prims:mapi(function(name)
+	local o = {}
+	o.ctype = ffi.typeof('j'..name)
+	o.array1Type = ffi.typeof('$[1]', o.ctype)
+	o.ptrType = ffi.typeof('$*', o.ctype)
+	return o, name
 end):setmetatable(nil)
 
 
@@ -14,7 +18,7 @@ JavaArray.__name = 'JavaArray'
 function JavaArray:init(args)
 	JavaArray.super.init(self, args)
 
-	-- right now jniEnv:newArray passes in classpath as
+	-- right now jniEnv:_newArray passes in classpath as
 	-- elemClassPath..'[]'
 	-- so pick it out here
 	-- better yet, use the arg
@@ -22,6 +26,14 @@ function JavaArray:init(args)
 	self.elemClassPath = args.elemClassPath
 		or self.classpath:match'^(.*)%[%]$'
 		or error("didn't provide JavaArray .elemClassPath, and .classpath "..tostring(self.classpath).." did not end in []")
+
+	local ffiTypes = ffiTypesForPrim[self.elemClassPath]
+	if ffiTypes then
+		-- or TODO just save this up front for primitives
+		self.elemFFIType = ffiTypes.ctype
+		self.elemFFIType_1 = ffiTypes.array1Type
+		self.elemFFIType_ptr = ffiTypes.ptrType
+	end
 end
 
 function JavaArray:__len()
@@ -35,11 +47,16 @@ end):setmetatable(nil)
 
 -- I'd override __index, but that will bring with it a world of hurt....
 function JavaArray:getElem(i)
+	self.env:_checkExceptions()
+
+	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
 	local getArrayElements = getArrayElementsField[self.elemClassPath]
 	if getArrayElements then
 		local arptr = self.env.ptr[0][getArrayElements](self.env.ptr, self.ptr, nil)
 		if arptr == nil then error("array index null pointer exception") end
-		return ffi.cast(self.elemClassPath..'*', arptr)[i]
+		-- TODO throw a real Java out of bounds exception
+		if i < 0 or i >= #self then error("index out of bounds "..tostring(i)) end
+		return ffi.cast(self.elemFFIType_ptr, arptr)[i]
 	else
 		local elemClassPath = self.elemClassPath
 		return JavaObject.createObjectForClassPath(elemClassPath, {
@@ -48,6 +65,8 @@ function JavaArray:getElem(i)
 			classpath = elemClassPath,
 		})
 	end
+
+	self.env:_checkExceptions()
 end
 
 local setArrayRegionField = prims:mapi(function(name)
@@ -56,10 +75,14 @@ end):setmetatable(nil)
 
 
 function JavaArray:setElem(i, v)
+	self.env:_checkExceptions()
+
+	i = tonumber(i) or error("java array index expected number, found "..tostring(i))
 	local setArrayRegion = setArrayRegionField[self.elemClassPath]
 	if setArrayRegion then
-		self.env.ptr[0][setArrayRegion](self.env.ptr, self.ptr, i, 1, 
-			ffi.new('j'..self.elemClassPath..'[1]', v)
+print(setArrayRegion, 'setting array at', i, 'to', v, self.elemClassPath)
+		self.env.ptr[0][setArrayRegion](self.env.ptr, self.ptr, i, 1,
+			self.elemFFIType_1(v)
 		)
 	else
 		-- another one of these primitive array problems
@@ -71,6 +94,8 @@ function JavaArray:setElem(i, v)
 			self.env:luaToJavaArg(v, self.elemClassPath)
 		)
 	end
+	
+	self.env:_checkExceptions()
 end
 
 return JavaArray

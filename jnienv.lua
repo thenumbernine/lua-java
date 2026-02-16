@@ -4,6 +4,7 @@ local assert = require 'ext.assert'
 local string = require 'ext.string'
 local vector = require 'stl.vector-lua'
 local JavaClass = require 'java.class'
+local JavaObject = require 'java.object'
 local prims = require 'java.util'.prims
 local getJNISig = require 'java.util'.getJNISig
 
@@ -68,7 +69,6 @@ function JNIEnv:newStr(s, len)
 	end
 	if jstring == nil then error("NewString failed") end
 	local resultClassPath = 'java/lang/String'
-	local JavaObject = require 'java.object'
 	return JavaObject.createObjectForClassPath(
 		resultClassPath, {
 			env = self,
@@ -83,7 +83,7 @@ local newArrayForType = prims:mapi(function(name)
 end):setmetatable(nil)
 
 -- jtype is a primitive or a classname
-function JNIEnv:newArray(jtype, length, objInit)
+function JNIEnv:_newArray(jtype, length, objInit)
 	local field = newArrayForType[jtype] or 'NewObjectArray'
 	local obj
 	if field == 'NewObjectArray' then
@@ -93,6 +93,7 @@ function JNIEnv:newArray(jtype, length, objInit)
 		-- am I going to need a java.null placeholder object?
 		obj = self.ptr[0].NewObjectArray(self.ptr, length, jclassObj.ptr, objInit)
 	else
+print(field)	
 		obj = self.ptr[0][field](self.ptr, length)
 	end
 
@@ -105,7 +106,6 @@ function JNIEnv:newArray(jtype, length, objInit)
 	-- but now the JavaObject classpath wouldn't match its getClass():getName() ...
 	-- TODO switch over all stored .classpath's to JNI-sig name qualifiers.
 	local resultClassPath = jtype..'[]'
-	local JavaObject = require 'java.object'
 	return JavaObject.createObjectForClassPath(
 		resultClassPath, {
 			env = self,
@@ -116,6 +116,39 @@ function JNIEnv:newArray(jtype, length, objInit)
 			elemClassPath = jtype,
 		}
 	)
+end
+
+-- get a jclass pointer for a jobject pointer
+function JNIEnv:_getObjClass(objPtr)
+	return self.ptr[0].GetObjectClass(self.ptr, objPtr)
+end
+
+-- get a classname for a jobject pointer
+function JNIEnv:_getObjClassPath(objPtr)
+	local jclass = self:_getObjClass(objPtr)
+	local java_lang_Class = self:findClass'java/lang/Class'
+	local classpath = java_lang_Class.java_lang_Class_getName(jclass)
+	return classpath, jclass
+end
+
+function JNIEnv:_exceptionOccurred()
+	local e = self.ptr[0].ExceptionOccurred(self.ptr)
+	if e == nil then return nil end
+
+	local classpath = self:_getObjClassPath(e)
+	return JavaObject.createObjectForClassPath(
+		classpath, 
+		{
+			env = self,
+			ptr = e,
+			classpath = classpath,
+		}
+	)
+end
+
+function JNIEnv:_checkExceptions()
+	local ex = self:_exceptionOccurred()
+	if ex then error('JVM '..ex) end
 end
 
 -- putting luaToJavaArgs here so it can auto-convert some objects like strings

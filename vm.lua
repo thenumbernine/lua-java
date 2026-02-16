@@ -1,3 +1,4 @@
+require 'ext.gc'
 require 'java.ffi.jni'		-- get cdefs
 local ffi = require 'ffi'
 local class = require 'ext.class'
@@ -49,6 +50,21 @@ function JavaVM:init(args)
 	self.ptr = jvm[0]
 	if jniEnvPtr[0] == nil then error("failed to find a JNIEnv*") end
 	self.jniEnv = JNIEnv(jniEnvPtr[0])
+end
+
+function JavaVM:destroy()
+	if self.ptr then
+		-- do you need to destroy the JNIEnv?
+		local result = self.ptr[0].DestroyJavaVM(self.ptr)
+		if result ~= 0 then
+			print('DestroyJavaVM failed with code', result)
+		end
+		self.ptr = nil
+	end
+end
+
+function JavaVM:__gc()
+	self:destroy()
 end
 
 return JavaVM

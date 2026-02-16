@@ -49,9 +49,14 @@ function JavaMethod:init(args)
 end
 
 function JavaMethod:__call(thisOrClass, ...)
-	local callName
-	local returnVoid
-	local returnObject
+	
+	-- I don't want to clear exceptions
+	-- but I don't want them messing with my stuff
+	-- but I don't want to check exceptiosn twice
+	-- but I might as well, to be safe
+	self.env:_checkExceptions()
+
+	local callName, returnVoid, returnObject
 	if self.static then
 		returnVoid = callStaticNameForReturnType.void 
 		returnObject = callStaticNameForReturnType.object
@@ -70,6 +75,9 @@ function JavaMethod:__call(thisOrClass, ...)
 		self.ptr,
 		self.env:luaToJavaArgs(2, self.sig, ...)	-- TODO sig as well to know what to convert it to?
 	)
+	
+	self.env:_checkExceptions()
+
 	if callName == returnVoid then return end
 	if callName ~= returnObject then return result end
 	-- convert / wrap the result

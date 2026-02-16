@@ -13,7 +13,8 @@ do -- make sure it's built
 		dsts = {dst},
 		srcs = {src},
 		rule = function(r)
-			os.exec('javac "'..r.srcs[1]..'" "'..r.dsts[1]..'"')
+			assert.eq(r.srcs[1]:gsub('%.java$', '%.class$'), r.dsts[1])	-- or else find where it will go ...
+			os.exec('javac "'..r.srcs[1]..'"')
 		end,
 	}
 	targets:run(dst)
@@ -23,13 +24,13 @@ end
 local ffi = require 'ffi'
 local JVM = require 'java.vm'
 local jvm = JVM()			-- setup for classpath=.
-local jniEnv = jvm.jniEnv
-print('jniEnv', jniEnv)
+local J = jvm.jniEnv
+print('JNIEnv', J)
 
 --public class Test {
-local Test = jniEnv:findClass(classname)
+local Test = J:findClass(classname)
 print('Test', Test)
--- jniEnv:findClass returns a JavaClass wrapper to a jclass pointer
+-- J:findClass returns a JavaClass wrapper to a jclass pointer
 -- so Test.ptr is a ... jobject ... of the class
 
 print('Test:getName()', Test:getName())
@@ -56,11 +57,11 @@ print('testObj toString', testObj:getJavaToString())
 
 -- can I make a new String?
 -- chicken-and-egg, you have to use JNIEnv
-print('new string', jniEnv:newStr'new string')
-print('#(new string)', #jniEnv:newStr'new string')
+print('new string', J:newStr'new string')
+print('#(new string)', #J:newStr'new string')
 
 -- can I make an array of Strings?
-local arr = jniEnv:newArray('java/lang/String', 3)
+local arr = J:_newArray('java/lang/String', 3)
 print('arr String[3]', arr)
 print('arr:getClass():getName()', arr:getClass():getName())	-- [Ljava/lang/String; ... i.e. String[]
 -- can I get its length?
@@ -74,7 +75,7 @@ print('arr[0]', arr:getElem(0))
 print('arr[1]', arr:getElem(1))
 print('arr[2]', arr:getElem(2))
 
-local doubleArr = jniEnv:newArray('double', 5)
+local doubleArr = J:_newArray('double', 5)
 print('doubleArr', doubleArr)
 print('doubleArr.getClass().getName()', 
 	doubleArr:getClass():getName()	-- '[D' ... just like the signature
@@ -83,6 +84,11 @@ print('doubleArr.getClass().getName()',
 doubleArr:setElem(3, 3.14)
 print('doubleArr[3]', doubleArr:getElem(3))
 
-local charArr = jniEnv:newArray('char', 2)
-charArr:setElem(1, 100)
-print('charArr[1]', charArr:getElem(2))
+local charArr = J:_newArray('char', 2)
+charArr:setElem(0, 100)
+charArr:setElem(1, 101)
+--print('charArr[2]', charArr:getElem(2))	-- exception
+print('charArr[0]', charArr:getElem(0))
+print('charArr[1]', charArr:getElem(1))
+
+jvm:destroy()
