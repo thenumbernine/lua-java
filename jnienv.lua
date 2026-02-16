@@ -1,3 +1,4 @@
+local ffi = require 'ffi'
 local class = require 'ext.class'
 local assert = require 'ext.assert'
 local string = require 'ext.string'
@@ -119,7 +120,7 @@ end
 
 -- putting luaToJavaArgs here so it can auto-convert some objects like strings
 
-function JNIEnv:luaToJavaArg(arg)
+function JNIEnv:luaToJavaArg(arg, sig)
 	local t = type(arg)
 	if t == 'table' then 
 		-- assert it is a cdata
@@ -130,15 +131,17 @@ function JNIEnv:luaToJavaArg(arg)
 		return arg
 	elseif t == 'number' then
 		-- TODO will vararg know how to convert things?
-		return arg
+		-- TODO assert sig is a primitive
+		return ffi.new('j'..sig, arg)
 	end
 	error("idk how to convert arg from Lua type "..t)
 end
 
 
-function JNIEnv:luaToJavaArgs(...)
+function JNIEnv:luaToJavaArgs(sigIndex, sig, ...)
 	if select('#', ...) == 0 then return end
-	return self:luaToJavaArg(...), self:luaToJavaArgs(select(2, ...))
+	return self:luaToJavaArg(..., sig[sigIndex]), 
+		self:luaToJavaArgs(sigIndex+1, sig, select(2, ...))
 end
 
 function JNIEnv:__tostring()

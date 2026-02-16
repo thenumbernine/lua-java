@@ -79,3 +79,10 @@ print('doubleArr', doubleArr)
 print('doubleArr.getClass().getName()', 
 	doubleArr:getClass():getName()	-- '[D' ... just like the signature
 )
+
+doubleArr:setElem(3, 3.14)
+print('doubleArr[3]', doubleArr:getElem(3))
+
+local charArr = jniEnv:newArray('char', 2)
+charArr:setElem(1, 100)
+print('charArr[1]', charArr:getElem(2))

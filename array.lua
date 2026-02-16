@@ -1,3 +1,4 @@
+local ffi = require 'ffi'
 local assert = require 'ext.assert'
 local JavaObject = require 'java.object'
 local prims = require 'java.util'.prims
@@ -36,7 +37,7 @@ end):setmetatable(nil)
 function JavaArray:getElem(i)
 	local getArrayElements = getArrayElementsField[self.elemClassPath]
 	if getArrayElements then
-		local arptr = self.env.ptr[0][getArrayElements](self.env.ptr, self.ptr, i)
+		local arptr = self.env.ptr[0][getArrayElements](self.env.ptr, self.ptr, nil)
 		if arptr == nil then error("array index null pointer exception") end
 		return ffi.cast(self.elemClassPath..'*', arptr)[i]
 	else
@@ -58,7 +59,7 @@ function JavaArray:setElem(i, v)
 	local setArrayRegion = setArrayRegionField[self.elemClassPath]
 	if setArrayRegion then
 		self.env.ptr[0][setArrayRegion](self.env.ptr, self.ptr, i, 1, 
-			ffi.new(self.elemClassPath..'[1]', v)
+			ffi.new('j'..self.elemClassPath..'[1]', v)
 		)
 	else
 		-- another one of these primitive array problems
@@ -67,7 +68,7 @@ function JavaArray:setElem(i, v)
 			self.env.ptr,
 			self.ptr,
 			i,
-			self.env:luaToJavaArg(v)
+			self.env:luaToJavaArg(v, self.elemClassPath)
 		)
 	end
 end
