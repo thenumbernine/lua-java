@@ -66,9 +66,9 @@ print('arr:getClass():getName()', arr:getClass():getName())	-- [Ljava/lang/Strin
 -- can I get its length?
 print('#(arr String[3])', #arr)
 
-arr:setElem(0, jniEnv:newStr'a')
-arr:setElem(1, jniEnv:newStr'b')
-arr:setElem(2, jniEnv:newStr'c')
+arr:setElem(0, 'a')
+arr:setElem(1, 'b')
+arr:setElem(2, 'c')
 
 print('arr[0]', arr:getElem(0))
 print('arr[1]', arr:getElem(1))

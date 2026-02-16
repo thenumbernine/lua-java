@@ -117,6 +117,27 @@ function JNIEnv:newArray(jtype, length, objInit)
 	)
 end
 
+-- putting luaToJavaArgs here so it can auto-convert some objects like strings
+
+function JNIEnv:luaToJavaArg(arg)
+	local t = type(arg)
+	if t == 'table' then 
+		-- assert it is a cdata
+		return arg.ptr 
+	elseif t == 'string' then
+		return self:newStr(arg).ptr
+	elseif t == 'cdata' then
+		return arg
+	end
+	error("idk how to convert arg from Lua type "..t)
+end
+
+
+function JNIEnv:luaToJavaArgs(...)
+	if select('#', ...) == 0 then return end
+	return self:luaToJavaArg(...), self:luaToJavaArgs(select(2, ...))
+end
+
 function JNIEnv:__tostring()
 	return self.__name..'('..tostring(self.ptr)..')'
 end

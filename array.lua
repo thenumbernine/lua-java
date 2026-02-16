@@ -18,7 +18,9 @@ function JavaArray:init(args)
 	-- so pick it out here
 	-- better yet, use the arg
 	-- TODO should I be switching all my stored "classpath"s over to JNI-signatures to handle prims as well, and to match with :getClass():getName() ?
-	self.elemClassPath = assert.index(args, 'elemClassPath')
+	self.elemClassPath = args.elemClassPath
+		or self.classpath:match'^(.*)%[%]$'
+		or error("didn't provide JavaArray .elemClassPath, and .classpath "..tostring(self.classpath).." did not end in []")
 end
 
 function JavaArray:__len()
@@ -38,15 +40,12 @@ function JavaArray:getElem(i)
 		if arptr == nil then error("array index null pointer exception") end
 		return ffi.cast(self.elemClassPath..'*', arptr)[i]
 	else
-		-- TODO what about primitives?
-		-- where to store if this array is a primitive array vs an object array?
-		-- in the classpath?
-		-- aren't there subclasses of Array for different primitive-arrays?
-		return JavaObject{
+		local elemClassPath = self.elemClassPath
+		return JavaObject.createObjectForClassPath(elemClassPath, {
 			env = self.env,
 			ptr = self.env.ptr[0].GetObjectArrayElement(self.env.ptr, self.ptr, i),
-			classpath = self.classpath:match'(.*)%[%]$' or '?',	-- TODO ...
-		}
+			classpath = elemClassPath,
+		})
 	end
 end
 
@@ -64,7 +63,12 @@ function JavaArray:setElem(i, v)
 	else
 		-- another one of these primitive array problems
 		-- the setter will depend on what the underlying primitive type is.
-		self.env.ptr[0].SetObjectArrayElement(self.env.ptr, self.ptr, i, v.ptr)
+		self.env.ptr[0].SetObjectArrayElement(
+			self.env.ptr,
+			self.ptr,
+			i,
+			self.env:luaToJavaArg(v)
+		)
 	end
 end
 

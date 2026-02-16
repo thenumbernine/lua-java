@@ -3,9 +3,8 @@ local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
 local JavaObject = require 'java.object'
-local remapArg = require 'java.util'.remapArg
-local remapArgs = require 'java.util'.remapArgs
 local prims = require 'java.util'.prims
+
 
 local callNameForReturnType =
 	table{'void', 'object'}
@@ -62,9 +61,9 @@ function JavaMethod:__call(thisOrClass, ...)
 	-- otherwise an object comes first
 	local result = self.env.ptr[0][callName](
 		self.env.ptr,
-		assert(remapArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
+		assert(self.env:luaToJavaArg(thisOrClass)),	-- if it's a static method ... hmm should I pass self.class by default?
 		self.ptr,
-		remapArgs(...)
+		self.env:luaToJavaArgs(...)
 	)
 	-- convert / wrap the result
 	return JavaObject.createObjectForClassPath(
@@ -84,9 +83,9 @@ function JavaMethod:newObject(classObj, ...)
 	local classpath = assert(classObj.classpath)
 	local result = self.env.ptr[0].NewObject(
 		self.env.ptr,
-		remapArg(classObj),
+		self.env:luaToJavaArg(classObj),
 		self.ptr,
-		remapArgs(...)
+		self.env:luaToJavaArgs(...)
 	)
 	-- fun fact, for java the ctor has return signature 'void'
 	-- which means the self.sig[1] won't hvae the expected classpath

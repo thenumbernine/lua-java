@@ -13,19 +13,23 @@ function JavaObject:init(args)
 	self.classpath = assert.index(args, 'classpath')
 end
 
--- static helper function for getting the correct JavaObject subclass depending on the classpath
-function JavaObject.createObjectForClassPath(classpath, args)
+-- static helper
+function JavaObject.getLuaClassForClassPath(classpath)
 	if classpath == 'java/lang/String' then
-		return require 'java.string'(args)
+		return require 'java.string'
 	-- I can't tell how I should format the classpath
 	elseif classpath:match'^%[' then
 		error("dont' use jni signatures for classpaths") 
-		return require 'java.array'(args)
+		return require 'java.array'
 	elseif classpath:match'%[%]$' then
-		args.elemClassPath = args.elemClassPath or classpath:sub(1, -3)
-		return require 'java.array'(args)
+		return require 'java.array'
 	end
-	return JavaObject(args)
+	return JavaObject
+end
+
+-- static helper function for getting the correct JavaObject subclass depending on the classpath
+function JavaObject.createObjectForClassPath(classpath, args)
+	return JavaObject.getLuaClassForClassPath(classpath)(args)
 end
 
 -- gets a JavaClass wrapping the java call `obj.getClass()`
