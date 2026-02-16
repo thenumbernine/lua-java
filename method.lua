@@ -15,7 +15,6 @@ local prims = table{
 	'long',
 	'float',
 	'double',
-
 }
 
 local callNameForReturnType = 
@@ -56,7 +55,7 @@ function JavaMethod:init(args)
 	-- you need to know if its static to load the method
 	-- and you need to know if its static to call the method
 	-- ... seems that is something that shoudlve been saved with the  method itself ...
-	self.static = arg.static
+	self.static = args.static
 end
 
 local function remapArg(arg)
