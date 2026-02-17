@@ -29,10 +29,12 @@ print('JNIEnv', J)
 print('JNI version', ('%x'):format(J:_version()))
 
 --public class Test {
-local Test = J:_class(classname)
+local Test = J:_class(classname)	-- fast but verbose way
 print('Test', Test)
 -- J:_class returns a JavaClass wrapper to a jclass pointer
 -- so Test._ptr is a ... jobject ... of the class
+local Test = J.Test			-- runtime namespace resolution (slow but concise)
+print('Test', Test)
 
 print('Test:_name()', Test:_name())
 -- TODO how to get some name other than "java.lang.Class" ?
@@ -62,6 +64,13 @@ local s = J:_str'new string'
 print('new string', s)
 print('#(new string)', #s)
 print('new string class', s:_class():_name())
+
+print('java.lang.String', J:_class'java/lang/String')
+print('J', J)
+print('J.java', J.java)
+print('J.java.lang', J.java.lang)
+local String = J.java.lang.String
+print('java.lang.String', String)
 
 -- can I make an array of Strings?
 local arr = J:_newArray('java/lang/String', 3)

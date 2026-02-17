@@ -33,11 +33,16 @@ function JNIEnv:_version()
 end
 
 function JNIEnv:_class(classpath)
+	
+	self:_checkExceptions()
+
 	local classObj = self._classesLoaded[classpath]
 	if not classObj then
 		local classptr = self._ptr[0].FindClass(self._ptr, classpath)
 		if classptr == nil then
-			return nil, 'failed to find class '..tostring(classpath)
+			-- I think this throws an exception?
+			local ex = self:_exceptionOccurred()
+			return nil, 'failed to find class '..tostring(classpath), ex
 		end
 		classObj = JavaClass{
 			env = self,
@@ -46,6 +51,9 @@ function JNIEnv:_class(classpath)
 		}
 		self._classesLoaded[classpath] = classObj
 	end
+	
+	self:_checkExceptions()
+	
 	return classObj
 end
 
@@ -130,7 +138,8 @@ end
 function JNIEnv:_getObjClassPath(objPtr)
 	local jclass = self:_getObjClass(objPtr)
 	local java_lang_Class = self:_class'java/lang/Class'
-	local sigstr = java_lang_Class.java_lang_Class_getName(jclass)
+	local sigstr = java_lang_Class
+		.java_lang_Class_getName(jclass)
 -- wait
 -- are you telling me
 -- when its a prim or an array, getName returns it as a signature-qualified string
@@ -144,12 +153,21 @@ function JNIEnv:_getObjClassPath(objPtr)
 	return classpath, jclass
 end
 
+-- check-and-return exceptions
 function JNIEnv:_exceptionOccurred()
 	local e = self._ptr[0].ExceptionOccurred(self._ptr)
 	if e == nil then return nil end
+	self._ptr[0].ExceptionClear(self._ptr)
+
+	if self._dontCheckExceptions then
+		error("java exception in exception handler")
+	end
+
+	assert(not self._dontCheckExceptions)
+	self._dontCheckExceptions = true
 
 	local classpath = self:_getObjClassPath(e)
-	return JavaObject.createObjectForClassPath(
+	local result = JavaObject.createObjectForClassPath(
 		classpath, 
 		{
 			env = self,
@@ -157,11 +175,28 @@ function JNIEnv:_exceptionOccurred()
 			classpath = classpath,
 		}
 	)
+	
+	self._dontCheckExceptions = nil
+
+	return result
 end
 
+-- check-and-throw exception
 function JNIEnv:_checkExceptions()
 	local ex = self:_exceptionOccurred()
-	if ex then error('JVM '..ex) end
+	-- but this calls toString, which could create its own exceptions ...
+	if not ex then return end
+
+	-- let's flag our jnienv for when it should and shouldn't catch exceptions
+	
+	assert(not self._dontCheckExceptions)
+	self._dontCheckExceptions = true
+	
+	local errstr = 'JVM '..ex
+	
+	self._dontCheckExceptions = nil
+	
+	error(errstr) 
 end
 
 -- putting _luaToJavaArgs here so it can auto-convert some objects like strings
@@ -195,5 +230,54 @@ function JNIEnv:__tostring()
 end
 
 JNIEnv.__concat = string.concat
+
+
+local Name = class()
+
+function JNIEnv:__index(k)
+	-- automatic, right?
+	--local v = rawget(self, k)
+	--if v ~= nil then return v end
+	v = JNIEnv[k]
+	if v ~= nil then return v end
+	if k:sub(1,1) == '_' then return end	-- skip our lua fields
+
+	-- alright this is anything not in self and not in the class
+	-- do automatic namespace lookup here
+	-- symbol resolution of global scope of 'k'
+	-- I guess that means classes only
+	local cl = self:_class(k)
+	if cl then return cl end
+
+print('JNIEnv __index', k)
+	return Name{env=self, name=k}
+end
+
+
+function Name:init(args)
+	rawset(self, '_env', assert.index(args, 'env'))
+	rawset(self, '_name', assert.index(args, 'name'))
+end
+
+function Name:__tostring()
+	return 'Name('..rawget(self, '_name')..')'
+end
+
+Name.__concat = string.concat
+
+function Name:__index(k)
+	v = rawget(self, k)		-- automatic?
+	if v ~= nil then return v end
+	v = rawget(Name, k)
+	if v ~= nil then return v end
+
+	local env = rawget(self, '_env')
+	local classname = rawget(self, '_name')..'/'..k
+	local cl = env:_class(classname)
+	if cl then return cl end
+
+print('Name __index', k, 'classname', classname)
+	return Name{env=env, name=classname}
+end
 
 return JNIEnv

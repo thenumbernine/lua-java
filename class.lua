@@ -37,6 +37,7 @@ function JavaClass:_method(args)
 	else
 		method = self._env._ptr[0].GetMethodID(self._env._ptr, self._ptr, funcname, sigstr)
 	end
+	-- TODO will this throw an exception? do I have to clear it?
 	if method == nil then
 		return nil, "failed to find "..tostring(funcname)..' '..tostring(sigstr)..(static and ' static' or '')
 	end
