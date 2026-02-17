@@ -19,12 +19,12 @@ function JNIEnv:init(ptr)
 
 
 	-- save this up front
-	local java_lang_Class = self:_class'java/lang/Class'
+	local java_lang_Class = self:_class'java.lang.Class'
 
 	-- TODO a way to cache method names, but we've got 3 things to identify them by: name, signature, static
 	java_lang_Class.java_lang_Class_getName = java_lang_Class:_method{
 		name = 'getName',
-		sig = {'java/lang/String'},
+		sig = {'java.lang.String'},
 	}
 end
 
@@ -54,7 +54,7 @@ function JNIEnv:_str(s, len)
 	if jstring == nil
 		then error("NewString failed")
 	end
-	local resultClassPath = 'java/lang/String'
+	local resultClassPath = 'java.lang.String'
 	return JavaObject._createObjectForClassPath(
 		resultClassPath, {
 			env = self,
@@ -82,14 +82,6 @@ function JNIEnv:_newArray(jtype, length, objInit)
 		obj = self._ptr[0][field](self._ptr, length)
 	end
 
-	-- now for each prim, JNI has a separate void* type for use with each its methods for primitive getters and setters ...
-	-- TODO THIS CLASSPATH WON'T MATCH NON-ARRAY CLASSPATHS
-	-- their classpath is java/lang/String or whatever
-	-- this one will, for the same, be Ljava/lang/string;
-	-- ...
-	-- so I wiil send it jtype[],
-	-- but now the JavaObject classpath wouldn't match its getClass():getName() ...
-	-- TODO switch over all stored .classpath's to JNI-sig name qualifiers.
 	local resultClassPath = jtype..'[]'
 	return JavaObject._createObjectForClassPath(
 		resultClassPath,
@@ -109,7 +101,9 @@ function JNIEnv:_class(classpath)
 
 	local classObj = self._classesLoaded[classpath]
 	if not classObj then
-		local jclass = self._ptr[0].FindClass(self._ptr, classpath)
+		-- FindClass wants /-separator
+		local slashClassPath = classpath:gsub('%.', '/')
+		local jclass = self._ptr[0].FindClass(self._ptr, slashClassPath)
 		if jclass == nil then
 			-- I think this throws an exception?
 			local ex = self:_exceptionOccurred()
@@ -145,7 +139,7 @@ end
 -- get a classname for a jobject pointer
 function JNIEnv:_getObjClassPath(objPtr)
 	local jclass = self:_getObjClass(objPtr)
-	local java_lang_Class = self:_class'java/lang/Class'
+	local java_lang_Class = self:_class'java.lang.Class'
 	local sigstr = java_lang_Class
 		.java_lang_Class_getName(jclass)
 -- wait
@@ -268,7 +262,7 @@ function Name:init(args)
 end
 
 function Name:__tostring()
-	return 'Name('..rawget(self, '_name')..')'
+	return 'Name('..rawget(self, '_name')..'.*'..')'
 end
 
 Name.__concat = string.concat
@@ -278,7 +272,7 @@ function Name:__index(k)
 	if v ~= nil then return v end
 
 	local env = rawget(self, '_env')
-	local classname = rawget(self, '_name')..'/'..k
+	local classname = rawget(self, '_name')..'.'..k
 	local cl = env:_class(classname)
 	if cl then return cl end
 

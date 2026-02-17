@@ -44,7 +44,7 @@ print('Test:_name()', Test:_name())
 
 --public static String test() { return "Testing"; }
 -- TODO is there a way to get a method signature?
-local Test_test = assert(Test:_method{name='test', sig={'java/lang/String'}, static=true})
+local Test_test = assert(Test:_method{name='test', sig={'java.lang.String'}, static=true})
 print('Test.test', Test_test)
 print('Test.test()', Test_test(Test))
 
@@ -62,7 +62,7 @@ print('testObj', testObj)
 -- call its java testObj.toString()
 print('testObj toString', testObj:_javaToString())
 
-local Test_foo = assert(Test:_field{name='foo', sig='java/lang/String'})
+local Test_foo = assert(Test:_field{name='foo', sig='java.lang.String'})
 print('Test_foo', Test_foo)
 print('testObj.foo', Test_foo(testObj))
 
@@ -84,7 +84,7 @@ print('new string', s)
 print('#(new string)', #s)
 print('new string class', s:_class():_name())
 
-print('java.lang.String', J:_class'java/lang/String')
+print('java.lang.String', J:_class'java.lang.String')
 print('J', J)
 print('J.java', J.java)
 print('J.java.lang', J.java.lang)
@@ -92,7 +92,7 @@ local String = J.java.lang.String
 print('java.lang.String', String)
 
 -- can I make an array of Strings?
-local arr = J:_newArray('java/lang/String', 3)
+local arr = J:_newArray('java.lang.String', 3)
 print('arr String[3]', arr)
 print('arr:_class():_name()', arr:_class():_name())	-- [Ljava/lang/String; ... i.e. String[]
 -- can I get its length?

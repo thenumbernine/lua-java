@@ -84,10 +84,10 @@ end
 
 -- calls in java `class.getName()`
 -- notice, this matches getJNISig(classname)
--- so java/lang/String will be Ljava/lang/String;
+-- so java.lang.String will be Ljava/lang/String;
 -- and double[] will be [D
 function JavaClass:_name()
-	local classpath = self._env:_class'java/lang/Class'
+	local classpath = self._env:_class'java.lang.Class'
 		.java_lang_Class_getName(self)
 --[[ wait, is this a classpath or a signature?
 -- how come double[] arrays return [D ?

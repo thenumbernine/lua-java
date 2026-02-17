@@ -50,7 +50,7 @@ local function getJNISig(s)
 	return ('['):rep(arrayCount)
 	.. (
 		primSigStrForName[s]
-		or 'L'..s..';'
+		or 'L'..s:gsub('%.', '/')..';'	-- convert from .-separator to /-separator
 	)
 end
 function getJNISigMethod(sig)
@@ -86,11 +86,8 @@ local function sigStrToObj(s)
 	local classname, rest = s:match'^L([^;]*);(.*)$'
 --DEBUG:print('classname', classname)	
 	if classname then
-		-- and getClass.getName() returns .'s in place of /'s
-		-- does java use .'s for anything else? 
-		-- maybe I should always use .'s
-		-- what about apks with namespace .'s and methods /'s ?
-		classname = classname:gsub('%.', '/')
+		-- convert from /-separator when it is to .-separator
+		classname = classname:gsub('/', '%.')
 		assert.eq(rest, '')
 --DEBUG:print('returning', 	classname..arraySuffix)
 		return classname..arraySuffix 

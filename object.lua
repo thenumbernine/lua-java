@@ -15,7 +15,7 @@ end
 
 -- static helper
 function JavaObject._getLuaClassForClassPath(classpath)
-	if classpath == 'java/lang/String' then
+	if classpath == 'java.lang.String' then
 		return require 'java.string'
 	-- I can't tell how I should format the classpath
 	elseif classpath:match'^%[' then
@@ -53,7 +53,7 @@ end
 function JavaObject:_javaToString()
 	return tostring(self:_method{
 		name = 'toString',
-		sig = {'java/lang/String'},
+		sig = {'java.lang.String'},
 	}(self))
 end
 
