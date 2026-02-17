@@ -27,8 +27,6 @@ I'm sure this has been done before, but here's my version.
 
 - `jniEnv:_version()` = returns the JNIEnv version, usually a hex number.
 
-- `jniEnv:_class(classpath)` = look up a Java class using C API `JNIEnv.FindClass`.
-
 - `jniEnv:_str(s)`
 - - if `s` is a string, returns a JavaObject wrapping a `java.lang.String` of the Lua-string contents of `s` using C API `JNIEnv.NewStringUTF`.
 - - if `s` is cdata, does the same but treating it as a memory pointer.
@@ -44,6 +42,10 @@ I'm sure this has been done before, but here's my version.
 - `jclass = jniEnv:_getObjClass(objPtr)` = returns a `jclass` pointer for a `jobject` pointer.  Wrapper for C API `JNIEnv.GetObjectClass`.
 
 - `classpath, jclass = jniEnv:_getObjClassPath(objPtr)` = returns a Lua string of the classpath and `jclass` for the object in `objPtr`.
+
+- `classObj = jniEnv:_saveJClassForClassPath(jclass, classpath)` = always creates a new JavaClass object for the `jclass` pointer, and saves it in this env's `_classesLoaded` table for this `classpath`.
+
+- `jniEnv:_class(classpath)` = look up a Java class using C API `JNIEnv.FindClass`.
 
 - `ex = jniEnv:_exceptionOccurred()` = if an exception occurred then returns the exception JavaObject.
 
@@ -165,5 +167,5 @@ The `java.ffi.jni` file is [`lua-include`](https://github.com/thenumbernine/incl
 # TODO
 
 - convert all slash classnames to dot classnames
-- `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method
-- reflection for full namespace search
+- `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method ... needs runtime name resolution 
+- reflection for full namespace search ... packages, methods, fields

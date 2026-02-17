@@ -32,30 +32,6 @@ function JNIEnv:_version()
 	return self._ptr[0].GetVersion(self._ptr)
 end
 
-function JNIEnv:_class(classpath)
-	self:_checkExceptions()
-
-	local classObj = self._classesLoaded[classpath]
-	if not classObj then
-		local classptr = self._ptr[0].FindClass(self._ptr, classpath)
-		if classptr == nil then
-			-- I think this throws an exception?
-			local ex = self:_exceptionOccurred()
-			return nil, 'failed to find class '..tostring(classpath), ex
-		end
-		classObj = JavaClass{
-			env = self,
-			ptr = classptr,
-			classpath = classpath,
-		}
-		self._classesLoaded[classpath] = classObj
-	end
-
-	self:_checkExceptions()
-
-	return classObj
-end
-
 function JNIEnv:_str(s, len)
 	assert(type(s) == 'string' or type(s) == 'cdata', 'expected string or cdata')
 	local jstring
@@ -126,6 +102,39 @@ function JNIEnv:_newArray(jtype, length, objInit)
 			elemClassPath = jtype,
 		}
 	)
+end
+
+function JNIEnv:_class(classpath)
+	self:_checkExceptions()
+
+	local classObj = self._classesLoaded[classpath]
+	if not classObj then
+		local jclass = self._ptr[0].FindClass(self._ptr, classpath)
+		if jclass == nil then
+			-- I think this throws an exception?
+			local ex = self:_exceptionOccurred()
+			return nil, 'failed to find class '..tostring(classpath), ex
+		end
+		classObj = self:_saveJClassForClassPath(jclass, classpath)
+	end
+
+	self:_checkExceptions()
+
+	return classObj
+end
+
+-- makes a JavaClass object for a jclass pointer
+-- saves it in _classesLoaded
+-- used by JNIENV:_class and JavaObject:_class
+function JNIEnv:_saveJClassForClassPath(jclass, classpath)
+print('*** JNIEnv caching '..classpath)	
+	local classObj = JavaClass{
+		env = self,
+		ptr = jclass,
+		classpath = classpath,
+	}
+	self._classesLoaded[classpath] = classObj
+	return classObj
 end
 
 -- get a jclass pointer for a jobject pointer

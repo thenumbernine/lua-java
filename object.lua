@@ -35,12 +35,8 @@ end
 -- gets a JavaClass wrapping the java call `obj._class()`
 function JavaObject:_class()
 	local classpath, jclass = self._env:_getObjClassPath(self._ptr)
-	local JavaClass = require 'java.class'
-	return JavaClass{
-		env = self._env,
-		ptr = jclass,
-		classpath = classpath,
-	}
+	local classObj = self._env:_saveJClassForClassPath(jclass, classpath)
+	return classObj
 end
 
 -- shorthand for self:_class():_method(args)

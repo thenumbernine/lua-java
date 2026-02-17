@@ -51,11 +51,15 @@ print('Test.test()', Test_test(Test))
 -- try to make a new Test()
 local Test_init = assert(Test:_method{name='<init>', sig={}})
 print('Test_init', Test_init)
-
--- call its tostring
 local testObj = Test_init:_new(Test)
 print('testObj', testObj)
 
+-- TODO again with jni shorthand ... needs runtime name lookup / function signature matching
+--local testObj = J:_new(Test)
+-- TODO again with jni shorthand ... needs runtime name lookup / function signature matching
+--local testObj = Test:_new()
+
+-- call its java testObj.toString()
 print('testObj toString', testObj:_javaToString())
 
 local Test_foo = assert(Test:_field{name='foo', sig='java/lang/String'})
