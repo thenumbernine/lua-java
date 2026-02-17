@@ -35,6 +35,8 @@ I'm sure this has been done before, but here's my version.
 - - if `s` is cdata, treats it as-is using C API `JNIEnv.NewString`
 - see `JavaString`
 
+- `jniEnv:_new(class, ...)` = create a new JavaObject.  `class` can be either a JavaClass or a classpath string.
+
 - `jniEnv:_newArray(javaType, length, objInit)`
 - - creates a Java array using one of the C API `JNIEnv.New*Array` methods
 - - see `JavaArray`
@@ -84,6 +86,10 @@ I'm sure this has been done before, but here's my version.
 - - `static` = true for static fields.
 
 - `cl:_name()` = returns the classpath of the object, using Java's `class.getName()` method, and then attempt to reverse-translate signature-encoded names, i.e. a `double[]` Java object would have a `class.getName()` of `[D`, but this would decode it back to `double[]`.
+
+- `cl:_new(...)` = create a new JavaObject.
+
+- `cl._members[name][index]` = either JavaMethod or JavaField of a member with that name.
 
 ### JavaObject
 `JavaObject = require 'java.object'`
@@ -175,3 +181,4 @@ The `java.ffi.jni` file is [`lua-include`](https://github.com/thenumbernine/incl
 
 - `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method ... needs runtime name resolution
 - proper symbol overload resolution based on method # of args and coercion or whatever
+- threads , esp with [`lua-thread`](http://github.com/thenumbernine/lua-thread) so that things don't segfault.
