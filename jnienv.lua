@@ -33,7 +33,6 @@ function JNIEnv:_version()
 end
 
 function JNIEnv:_class(classpath)
-
 	self:_checkExceptions()
 
 	local classObj = self._classesLoaded[classpath]

@@ -48,6 +48,11 @@ function JavaObject:_method(args)
 	return self:_class():_method(args)
 end
 
+-- shorthand
+function JavaObject:_field(args)
+	return self:_class():_field(args)
+end
+
 -- calls in java `obj.toString()`
 function JavaObject:_javaToString()
 	return tostring(self:_method{

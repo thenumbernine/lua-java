@@ -2,7 +2,8 @@
 
 I'm sure this has been done before, but here's my version.
 
-### `JVM = require 'java.vm'
+### JVM
+`JVM = require 'java.vm'`
 
 - `jvm = JVM(args)` = creates a new VM
 - args:
@@ -15,7 +16,8 @@ I'm sure this has been done before, but here's my version.
 
 - `jvm.jniEnv` = a JNIEnv object
 
-### `JNIEnv = require 'java.jnienv'
+### JNIEnv
+`JNIEnv = require 'java.jnienv'`
 
 - `jniEnv = JNIEnv(ptr)` = create a JNIEnv object with the specified `JNIEnv*` pointer
 
@@ -56,7 +58,8 @@ I'm sure this has been done before, but here's my version.
 - - ex: `jniEnv.java.lang.String` retrieves the JavaClass `java.lang.String`
 - - TODO still need to incorporate lookups for methods and members
 
-### `JavaClass = require 'java.class'`
+### JavaClass
+`JavaClass = require 'java.class'`
 
 - `cl = JavaClass(args)` = `jclass` wrapper
 - args:
@@ -64,15 +67,24 @@ I'm sure this has been done before, but here's my version.
 - - `ptr` = the `jclass`
 - - `classpath` = the classpath of this class
 
-- `cl:_method(args)` = returns a `JavaMethod` object for a Java method.
+- `cl:_method(args)` = returns a `JavaMethod` object for a `jmethodID`.
 - args:
 - - `name` = the method name
 - - `sig` = the method signature, a table of classnames/primitives, the first is the return type.  An empty table defaults to a `void` return type.
 - - `static` = set to `true` to retrieve a static method.
 
+- `cl:_field(args)` = returns a `JavaField` object for a `jfieldID`.
+- args:
+- - `env` = `JNIEnv` object.
+- - `ptr` = `jfieldID`.
+- - `name` = field name.
+- - `sig` = signature string of the field.
+- - `static` = true for static fields.
+
 - `cl:_name()` = returns the classname of the object, using Java's `class.getName()` method, and then attempt to reverse-translate signature-encoded names, i.e. a `double[]` Java object would have a `class.getName()` of `[D`, but this would decode it back to `double[]`.
 
-### `JavaObject = require 'java.object'`
+### JavaObject
+`JavaObject = require 'java.object'`
 
 - `obj = JavaObject(args)` = wrapper for a Java `jobject`
 - args:
@@ -88,11 +100,25 @@ I'm sure this has been done before, but here's my version.
 
 - `method = obj:_method(args)` = shorthand for `obj:_class():method(args)`.
 
+- `field = obj:_field(args)` = shorthand
+
 - `str = obj:_javaToString()` = returns a Lua string based on the Java `toString()` method.
 
 - `str = obj:_getDebugStr()` = useful internal string with a few things like the Lua class name, Java classpath, and pointer.
 
-### `JavaMethod = require 'java.method'`
+### JavaField
+`JavaField = require 'java.field'`
+
+- `field = JavaField(args)` = wrapper for a `jfieldID`.
+
+- `result = field(thisOrClass)` = shorthand for `field:_get(thisOrClass)`
+- `field(thisOrClass, value)` = shorthand for `field:_set(thisOrClass, value)`
+
+- `result = field:_get(thisOrClass)` = gets the Java object's field's value, or Java class's static field's value.
+- `field:_set(thisOrClass, value)` = sets the Java object's field's value, or Java class's static field's value.
+
+### JavaMethod
+`JavaMethod = require 'java.method'`
 
 - `method = JavaMethod(args)` = wrapper for a `jmethodID`.
 - args:
@@ -105,7 +131,8 @@ I'm sure this has been done before, but here's my version.
 
 - `obj = method:_new(...)` = for constructor methods, calls C API `JNIEnv.NewObject` on this method.
 
-### `JavaString = require 'java.string'`
+### JavaString
+`JavaString = require 'java.string'`
 
 - `s = JavaString(args)` = inherited from JavaObject.
 
@@ -113,7 +140,8 @@ I'm sure this has been done before, but here's my version.
 
 - `#s` aka `s:__len()` = returns the Java string length.
 
-### `JavaArray = require 'java.array'`
+### JavaArray
+`JavaArray = require 'java.array'`
 
 - `ar = JavaArray(args)` = inherited from JavaObject, and:
 - args:
@@ -130,14 +158,12 @@ I'm sure this has been done before, but here's my version.
 
 <hr>
 
-Alright, so I've got my [SDL-LuaJIT](https://github.com/thenumbernine/SDLLuaJIT-android) launcher.
+I made this to go with my [SDL-LuaJIT](https://github.com/thenumbernine/SDLLuaJIT-android) launcher.
 
-It launches into LuaJIT just fine.
+The `java.ffi.jni` file is [`lua-include`](https://github.com/thenumbernine/include-lua) run on `jni.h`.
 
-From there, LuaJIT can access any C function just fine.
+# TODO
 
-I have a simple function set up to save and relay the `JNIEnv`.
-
-Next, using this library, I will use LuaJIT to access JNI to do JNI stuff.
-
-This is just [`lua-include`](https://github.com/thenumbernine/include-lua) run on `jni.h`.
+- convert all slash classnames to dot classnames
+- `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method
+- reflection for full namespace search

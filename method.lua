@@ -28,6 +28,7 @@ local callStaticNameForReturnType =
 	end):setmetatable(nil)
 
 
+-- subclass of JavaObject?
 local JavaMethod = class()
 JavaMethod.__name = 'JavaMethod'
 
@@ -82,7 +83,8 @@ function JavaMethod:__call(thisOrClass, ...)
 	if callName ~= returnObject then return result end
 	-- convert / wrap the result
 	return JavaObject._createObjectForClassPath(
-		self._sig[1], {
+		self._sig[1],
+		{
 			env = self._env,
 			ptr = result,
 			classpath = self._sig[1],

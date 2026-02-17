@@ -1,5 +1,6 @@
 #!/usr/bin/env luajit
 -- following https://www.inonit.com/cygwin/jni/invocationApi/c.html
+local assert = require 'ext.assert'
 
 local classname = 'Test'	-- i.e. Test.class, from Test.java
 
@@ -13,7 +14,7 @@ do -- make sure it's built
 		dsts = {dst},
 		srcs = {src},
 		rule = function(r)
-			assert.eq(r.srcs[1]:gsub('%.java$', '%.class$'), r.dsts[1])	-- or else find where it will go ...
+			assert.eq(r.srcs[1]:gsub('%.java$', '%.class'), r.dsts[1])	-- or else find where it will go ...
 			os.exec('javac "'..r.srcs[1]..'"')
 		end,
 	}
@@ -43,20 +44,34 @@ print('Test:_name()', Test:_name())
 
 --public static String test() { return "Testing"; }
 -- TODO is there a way to get a method signature?
-local Test_test = Test:_method{name='test', sig={'java/lang/String'}, static=true}
+local Test_test = assert(Test:_method{name='test', sig={'java/lang/String'}, static=true})
 print('Test.test', Test_test)
 print('Test.test()', Test_test(Test))
 
 -- try to make a new Test()
-local Test_init = Test:_method{name='<init>', sig={}}
+local Test_init = assert(Test:_method{name='<init>', sig={}})
 print('Test_init', Test_init)
-
 
 -- call its tostring
 local testObj = Test_init:_new(Test)
 print('testObj', testObj)
 
 print('testObj toString', testObj:_javaToString())
+
+local Test_foo = assert(Test:_field{name='foo', sig='java/lang/String'})
+print('Test_foo', Test_foo)
+print('testObj.foo', Test_foo(testObj))
+
+local Test_bar = Test:_field{name='bar', sig='int'}
+print('testObj.bar', Test_bar(testObj))
+Test_bar(testObj, 42)
+print('testObj.bar', Test_bar(testObj))
+
+local Test_baz = Test:_field{name='baz', sig='double'}
+print('testObj.baz', Test_baz(testObj))
+Test_baz(testObj, 234)
+print('testObj.baz', Test_baz(testObj))
+
 
 -- can I make a new String?
 -- chicken-and-egg, you have to use JNIEnv

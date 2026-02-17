@@ -3,9 +3,12 @@ local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
 local JavaMethod = require 'java.method'
+local JavaField = require 'java.field'
 local getJNISig = require 'java.util'.getJNISig
 local sigStrToObj = require 'java.util'.sigStrToObj
 
+-- is a Java class a Java object?
+-- should JavaClass inherit from JavaObject?
 local JavaClass = class()
 JavaClass.__name = 'JavaClass'
 
@@ -24,6 +27,8 @@ args:
 	static = boolean
 --]]
 function JavaClass:_method(args)
+	self._env:_checkExceptions()
+
 	assert.type(args, 'table')
 	local funcname = assert.type(assert.index(args, 'name'), 'string')
 	local static = args.static
@@ -37,14 +42,41 @@ function JavaClass:_method(args)
 	else
 		method = self._env._ptr[0].GetMethodID(self._env._ptr, self._ptr, funcname, sigstr)
 	end
-	-- TODO will this throw an exception? do I have to clear it?
+	-- will this throw an exception? probably.
 	if method == nil then
-		return nil, "failed to find "..tostring(funcname)..' '..tostring(sigstr)..(static and ' static' or '')
+		local ex = self._env:_exceptionOccurred()
+		return nil, "failed to find method "..tostring(funcname)..' '..tostring(sigstr)..(static and ' static' or ''), ex
 	end
 	return JavaMethod{
 		env = self._env,
 		class = self,
 		ptr = method,
+		sig = sig,
+		static = static,
+	}
+end
+
+function JavaClass:_field(args)
+	self._env:_checkExceptions()
+
+	assert.type(args, 'table')
+	local fieldname = assert.type(assert.index(args, 'name'), 'string')
+	local sig = assert.type(assert.index(args, 'sig'), 'string')
+	local sigstr = getJNISig(sig)
+	local static = args.static
+	local field
+	if static then
+		field = self._env._ptr[0].GetStaticFieldID(self._env._ptr, self._ptr, fieldname, sigstr)
+	else
+		field = self._env._ptr[0].GetFieldID(self._env._ptr, self._ptr, fieldname, sigstr)
+	end
+	if field == nil then
+		local ex = self._env:_exceptionOccurred()
+		return nil, "failed to find field "..tostring(fieldname)..' '..tostring(sig)..(static and ' static' or ''), ex
+	end
+	return JavaField{
+		env = self._env,
+		ptr = field,
 		sig = sig,
 		static = static,
 	}
