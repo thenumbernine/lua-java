@@ -27,12 +27,12 @@ function JavaClass:_setupReflection()
 	local env = self._env
 --DEBUG:print('calling setupReflect on', self._classpath)
 	self._members = {}	-- self._members[fieldname][fieldIndex] = JavaObject of field or member
-	
+
 	local java_lang_Class = assert(env:_class'java.lang.Class')
 	self._javaObjFields = java_lang_Class._java_lang_Class_getFields(self)
 	self._javaObjMethods = java_lang_Class._java_lang_Class_getMethods(self)
-print(self._classpath, 'has', #self._javaObjFields, 'fields and', #self._javaObjMethods, 'methods')
-	
+--DEBUG:print(self._classpath, 'has', #self._javaObjFields, 'fields and', #self._javaObjMethods, 'methods')
+
 	local java_lang_reflect_Field = env:_class'java.lang.reflect.Field'
 	local java_lang_reflect_Method = env:_class'java.lang.reflect.Method'
 
@@ -43,8 +43,8 @@ print(self._classpath, 'has', #self._javaObjFields, 'fields and', #self._javaObj
 			._java_lang_reflect_Field_getName(
 				field
 			))
-print('field['..i..'] = '..name)
-		
+--DEBUG:print('field['..i..'] = '..name)
+
 		-- fieldType is a jobject ... of a java.lang.Class
 		-- can I just treat it like a jclass?
 		-- can I just call java.lang.Class.getName() on it?
@@ -60,20 +60,20 @@ print('field['..i..'] = '..name)
 			._java_lang_reflect_Field_getModifiers(
 				field
 			)
---DEBUG:print('fieldModifiers', fieldModifiers)	
+--DEBUG:print('fieldModifiers', fieldModifiers)
 
 		-- ok now switch this reflect field obj to a jni jfieldID
 		local jfieldID = env._ptr[0].FromReflectedField(env._ptr, field._ptr)
 --DEBUG:print('jfieldID', jfieldID)
 		assert(jfieldID ~= nil, "couldn't get jfieldID from reflect field for "..tostring(name))
-		
+
 		local fieldObj = JavaField{
 			env = env,
 			ptr = jfieldID,
 			sig = fieldClassPath,
 			static = 0 ~= bit.band(fieldModifiers, 8),	-- java.lang.reflect.Modifier.STATIC
 		}
-		
+
 		self._members[name] = self._members[name] or table()
 		self._members[name]:insert(fieldObj)
 	end
@@ -86,16 +86,16 @@ print('field['..i..'] = '..name)
 			._java_lang_reflect_Method_getName(
 				method
 			))
-print('method['..i..'] = '..name, method)
-	
+--DEBUG:print('method['..i..'] = '..name, method)
+
 		local sig = table()
 		local methodReturnType = java_lang_reflect_Method
 			._java_lang_reflect_Method_getReturnType(
 				method
 			)
 		local methodReturnTypeName = tostring(java_lang_Class._java_lang_Class_getName(methodReturnType))
-		sig:insert(methodReturnTypeName) 
-		
+		sig:insert(methodReturnTypeName)
+
 		local methodParameterTypes = java_lang_reflect_Method
 			._java_lang_reflect_Method_getParameterTypes(
 				method
@@ -110,11 +110,11 @@ print('method['..i..'] = '..name, method)
 			._java_lang_reflect_Method_getModifiers(
 				method
 			)
-		
+
 		local jmethodID = env._ptr[0].FromReflectedMethod(env._ptr, method._ptr)
 --DEBUG:print('jmethodID', jmethodID)
 		assert(jmethodID ~= nil, "couldn't get jmethodID from reflect method for "..tostring(name))
-	
+
 		local methodObj = JavaMethod{
 			env = env,
 			ptr = jmethodID,
@@ -233,5 +233,55 @@ function JavaClass:__tostring()
 end
 
 JavaClass.__concat = string.concat
+
+function JavaClass:__index(k)
+	-- if self[k] exists then this isn't called
+	local cl = getmetatable(self)
+	local v = cl[k]
+	if v ~= nil then return v end
+
+	if type(k) ~= 'string' then return end
+
+	-- don't build namespaces off private vars
+	if k:match'^_' then
+print('JavaClass.__index', k, "I am reserving underscores for private variables.  You were about to invoke a name resolve")
+print(debug.traceback())
+		return
+	end
+
+	-- now check fields/methods
+--DEBUG:print('here', self._classpath)
+--DEBUG:print(require'ext.table'.keys(self._members):sort():concat', ')
+	local membersForName = self._members[k]
+	if membersForName then
+assert.gt(#membersForName, 0, k)
+if #membersForName > 1 then print("for name "..k.." there are "..#membersForName.." options") end
+--DEBUG:print('#membersForName', k, #membersForName)
+		-- how to resolve
+		-- now if its a field vs a method ...
+		local member = membersForName[1]
+		local JavaField = require 'java.field'
+		local JavaMethod = require 'java.method'
+		if JavaField:isa(member) then
+			-- assert it is a static member?
+			return member:_get(self)	-- call the getter of the field
+		elseif JavaMethod:isa(member) then
+			-- assert it is a static member?
+			-- TODO return the method in a state to call this object?
+			-- or return a new wrapper for methods + call context of this object?
+			-- or for now return a function that calls the method with this
+			--if member._static then
+				-- bind 1st arg to the object
+			--	return function(...) return member(self, ...) end
+			--else
+				-- still wants self as 1st arg
+				-- so you can use Lua's a.b vs a:b tricks
+				return member
+			--end
+		else
+			error("got a member for field "..k.." with unknown type "..tostring(getmetatable(member).__name))
+		end
+	end
+end
 
 return JavaClass

@@ -92,7 +92,9 @@ print('testObj.foo', testObj.foo, type(testObj.foo))
 testObj.foo = 'string'
 print('testObj.foo', testObj.foo, type(testObj.foo))
 
-print('testObj.testing()', testObj:test())
+print('testObj:test()', testObj:test())
+
+print('Test:test()', Test:test())
 
 -- can I make a new String?
 -- chicken-and-egg, you have to use JNIEnv

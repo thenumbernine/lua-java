@@ -160,11 +160,17 @@ I'm sure this has been done before, but here's my version.
 
 <hr>
 
+Also for JNI, JavaClass, and JavaObject (and subclasses JavaString and JavaArray),
+the Lua `__index` and `__newindex` works for fields and methods.
+
+Be sure to always use `obj:func(...)` when calling, even if it's calling a static method, even from a Java class, because Lua needs the context of it, be it objects or classes.
+
+<hr>
+
 I made this to go with my [SDL-LuaJIT](https://github.com/thenumbernine/SDLLuaJIT-android) launcher.
 
 The `java.ffi.jni` file is [`lua-include`](https://github.com/thenumbernine/include-lua) run on `jni.h`.
 
 # TODO
 
-- reflection for full namespace search ... packages, methods, fields
 - `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method ... needs runtime name resolution
