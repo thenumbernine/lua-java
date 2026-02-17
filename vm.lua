@@ -54,7 +54,10 @@ function JavaVM:init(args)
 	if jvm[0] == nil then error("failed to find a JavaVM*") end
 	self._ptr = jvm[0]
 	if jniEnvPtr[0] == nil then error("failed to find a JNIEnv*") end
-	self.jniEnv = JNIEnv(jniEnvPtr[0])
+	self.jniEnv = JNIEnv{
+		vm = self,
+		ptr = jniEnvPtr[0],
+	}
 end
 
 function JavaVM:destroy()

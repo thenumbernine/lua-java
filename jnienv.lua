@@ -24,8 +24,9 @@ local bootstrapClasses = {
 local JNIEnv = class()
 JNIEnv.__name = 'JNIEnv'
 
-function JNIEnv:init(ptr)
-	self._ptr = assert.type(ptr, 'cdata', "expected a JNIEnv*")
+function JNIEnv:init(args)
+	self._vm = assert.index(args, 'vm')	-- jnienv will hold the vm just so the vm doesn't gc
+	self._ptr = assert.type(assert.index(args, 'ptr'), 'cdata', "expected a JNIEnv*")
 	self._classesLoaded = {}
 
 	-- always keep this non-nil for __index's sake
