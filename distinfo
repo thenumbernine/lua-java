@@ -1,22 +1,29 @@
 --------------------------------------------
 -- generated with dist/build-distinfo.rua --
 --------------------------------------------
+
 name = "java"
 files = {
 	"README.md",
+	"array.lua",
+	"callresolve.lua",
 	"class.lua",
 	"distinfo",
 	"ffi/jni.lua",
+	"field.lua",
 	"jnienv.lua",
 	"method.lua",
 	"object.lua",
 	"string.lua",
 	"tests/Test.java",
 	"tests/test.lua",
+	"util.lua",
 	"vm.lua",
 }
 deps = {
 	"ext",
+	"stl",
+	--"make",	-- for test
 }
 generateBindings = ||{
 	{
