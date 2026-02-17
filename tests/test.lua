@@ -15,7 +15,7 @@ do -- make sure it's built
 		srcs = {src},
 		rule = function(r)
 			assert.eq(r.srcs[1]:gsub('%.java$', '%.class'), r.dsts[1])	-- or else find where it will go ...
-			os.exec('javac "'..r.srcs[1]..'"')
+			assert(os.exec('javac "'..r.srcs[1]..'"'))
 		end,
 	}
 	targets:run(dst)
@@ -23,9 +23,7 @@ end
 
 
 local ffi = require 'ffi'
-local JVM = require 'java.vm'
-local jvm = JVM()			-- setup for classpath=.
-local J = jvm.jniEnv
+local J = require 'java'
 print('JNIEnv', J)
 print('JNI version', ('%x'):format(J:_version()))
 
@@ -155,5 +153,3 @@ print('charArr[0]', charArr:_get(0))
 print('charArr[1]', charArr:_get(1))
 print('charArr[0]', charArr[0])
 print('charArr[1]', charArr[1])
-
-jvm:destroy()

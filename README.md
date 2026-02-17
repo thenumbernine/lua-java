@@ -3,9 +3,9 @@
 I'm sure this has been done before, but here's my version.
 
 ## Java
-`J = require 'java'()`
+`J = require 'java'`
 
-Quick start to create a JVM and return its `JNIEnv`.
+Quick start to create a JVM and return its `JNIEnv` as `J`.
 
 ### JVM
 `JVM = require 'java.vm'`
@@ -187,3 +187,6 @@ The `java.ffi.jni` file is [`lua-include`](https://github.com/thenumbernine/incl
 - `jni:_new(obj, args...)`, `class:_new(args)` to auto grab the ctor method ... needs runtime name resolution
 - proper symbol overload resolution based on method # of args and coercion or whatever
 - threads , esp with [`lua-thread`](http://github.com/thenumbernine/lua-thread) so that things don't segfault.
+- - to make threads I'd need to implement Runnable, which means passing a C function as a Java function ... 
+- - - hmm ... maybe you could hijack a class method with Register/UnregisterNatives?
+- - - and then pass the hijacked native method into the Proxy Runnable implementation ...
