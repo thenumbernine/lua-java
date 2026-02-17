@@ -1,4 +1,5 @@
 local table = require 'ext.table'
+local assert = require 'ext.assert'
 
 -- seems this goes somewhere with the sig stuff in java.class
 local prims = table{
@@ -11,6 +12,21 @@ local prims = table{
 	'float',
 	'double',
 }
+
+local primSigStrForName = {
+	boolean = 'Z',
+	byte = 'B',
+	char = 'C',	-- in java, char is 16bit
+	short = 'S',
+	int = 'I',
+	long = 'J',
+	float = 'F',
+	double = 'D',
+	void = 'V',
+}
+
+local primNameForSigStr = table.map(primSigStrForName, function(v,k) return k,v end)
+	:setmetatable(nil)
 
 --[[
 getJNISig accepts string for a single arg
@@ -33,17 +49,7 @@ local function getJNISig(s)
 	end
 	return ('['):rep(arrayCount)
 	.. (
-		({
-			boolean = 'Z',
-			byte = 'B',
-			char = 'C',	-- in java, char is 16bit
-			short = 'S',
-			int = 'I',
-			long = 'J',
-			float = 'F',
-			double = 'D',
-			void = 'V',
-		})[s]
+		primSigStrForName[s]
 		or 'L'..s..';'
 	)
 end
@@ -55,7 +61,45 @@ function getJNISigMethod(sig)
 	..')'..getJNISig(sig[1] or 'void')
 end
 
+-- opposite of getJNISig
+local function sigStrToObj(s)
+	s = tostring(s)
+--DEBUG:print('sigStrToObj', s)	
+	assert(not s:match'^%(', "TODO sigStrToobject for methods")
+	local arraySuffix = ''
+	while true do
+		local rest = s:match'^%[(.*)$'
+		if not rest then break end
+		arraySuffix = arraySuffix .. '[]'
+		s = rest
+	end
+--DEBUG:print('arrays', arraySuffix, 'base', s)
+
+	local prim = primNameForSigStr[s]
+	if prim then 
+--DEBUG:print'is prim'		
+		-- TOOD match and return the rest
+		return prim..arraySuffix 
+	end
+--DEBUG:print('should be class', s)	
+	-- what's left? objects?
+	local classname, rest = s:match'^L([^;]*);(.*)$'
+--DEBUG:print('classname', classname)	
+	if classname then
+		-- and getClass.getName() returns .'s in place of /'s
+		-- does java use .'s for anything else? 
+		-- maybe I should always use .'s
+		-- what about apks with namespace .'s and methods /'s ?
+		classname = classname:gsub('%.', '/')
+		assert.eq(rest, '')
+--DEBUG:print('returning', 	classname..arraySuffix)
+		return classname..arraySuffix 
+	end
+	return nil --error("sigStrToObj "..tostring(s))
+end
+
 return {
 	prims = prims,
 	getJNISig = getJNISig,
+	sigStrToObj = sigStrToObj,
 }

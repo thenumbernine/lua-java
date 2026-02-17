@@ -22,7 +22,7 @@ function JavaArray:init(args)
 	-- elemClassPath..'[]'
 	-- so pick it out here
 	-- better yet, use the arg
-	-- TODO should I be switching all my stored "classpath"s over to JNI-signatures to handle prims as well, and to match with :getClass():getName() ?
+	-- TODO should I be switching all my stored "classpath"s over to JNI-signatures to handle prims as well, and to match with .getClass().getName() ?
 	self._elemClassPath = args.elemClassPath
 		or self._classpath:match'^(.*)%[%]$'
 		or error("didn't provide JavaArray .elemClassPath, and .classpath "..tostring(self._classpath).." did not end in []")

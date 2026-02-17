@@ -34,19 +34,19 @@ print('Test', Test)
 -- J:_class returns a JavaClass wrapper to a jclass pointer
 -- so Test._ptr is a ... jobject ... of the class
 
-print('Test:getName()', Test:getName())
+print('Test:_name()', Test:_name())
 -- TODO how to get some name other than "java.lang.Class" ?
 -- TODO how to enumerate all properties of a JavaClass?
 --]]
 
 --public static String test() { return "Testing"; }
 -- TODO is there a way to get a method signature?
-local Test_test = Test:getMethod{name='test', sig={'java/lang/String'}, static=true}
+local Test_test = Test:_method{name='test', sig={'java/lang/String'}, static=true}
 print('Test.test', Test_test)
 print('Test.test()', Test_test(Test))
 
 -- try to make a new Test()
-local Test_init = Test:getMethod{name='<init>', sig={}}
+local Test_init = Test:_method{name='<init>', sig={}}
 print('Test_init', Test_init)
 
 
@@ -58,13 +58,15 @@ print('testObj toString', testObj:getJavaToString())
 
 -- can I make a new String?
 -- chicken-and-egg, you have to use JNIEnv
-print('new string', J:_str'new string')
-print('#(new string)', #J:_str'new string')
+local s = J:_str'new string'
+print('new string', s)
+print('#(new string)', #s)
+print('new string class', s:_class():_name())
 
 -- can I make an array of Strings?
 local arr = J:_newArray('java/lang/String', 3)
 print('arr String[3]', arr)
-print('arr:getClass():getName()', arr:getClass():getName())	-- [Ljava/lang/String; ... i.e. String[]
+print('arr:_class():_name()', arr:_class():_name())	-- [Ljava/lang/String; ... i.e. String[]
 -- can I get its length?
 print('#(arr String[3])', #arr)
 
@@ -78,8 +80,8 @@ print('arr[2]', arr:_get(2))
 
 local doubleArr = J:_newArray('double', 5)
 print('doubleArr', doubleArr)
-print('doubleArr.getClass().getName()', 
-	doubleArr:getClass():getName()	-- '[D' ... just like the signature
+print('doubleArr._class()._name()', 
+	doubleArr:_class():_name()	-- '[D' ... just like the signature
 )
 
 doubleArr:_set(3, 3.14)

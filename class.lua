@@ -4,6 +4,7 @@ local string = require 'ext.string'
 local table = require 'ext.table'
 local JavaMethod = require 'java.method'
 local getJNISig = require 'java.util'.getJNISig
+local sigStrToObj = require 'java.util'.sigStrToObj
 
 local JavaClass = class()
 JavaClass.__name = 'JavaClass'
@@ -22,7 +23,7 @@ args:
 		first arg is return type
 	static = boolean
 --]]
-function JavaClass:getMethod(args)
+function JavaClass:_method(args)
 	assert.type(args, 'table')
 	local funcname = assert.type(assert.index(args, 'name'), 'string')
 	local static = args.static
@@ -49,9 +50,22 @@ function JavaClass:getMethod(args)
 end
 
 -- calls in java `class.getName()`
-function JavaClass:getName()
-	return self._env:_class'java/lang/Class'
+-- notice, this matches getJNISig(classname)
+-- so java/lang/String will be Ljava/lang/String;
+-- and double[] will be [D
+function JavaClass:_name()
+	local classpath = self._env:_class'java/lang/Class'
 		.java_lang_Class_getName(self)
+--[[ wait, is this a classpath or a signature?
+-- how come double[] arrays return [D ?
+-- how come String[] arrays return [Ljava/lang/String;
+-- but String returns java/lang/String ? ?!?!?!??!?
+-- HOW ARE YOU SUPPOSED TO TELL A SIGNATURE VS A CLASSPATH?
+print('JavaClass:_name', type(classpath), classpath)
+--]]
+	classpath = tostring(classpath)
+	classpath = sigStrToObj(classpath) or classpath
+	return classpath
 end
 
 function JavaClass:__tostring()

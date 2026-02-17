@@ -32,8 +32,8 @@ function JavaObject.createObjectForClassPath(classpath, args)
 	return JavaObject.getLuaClassForClassPath(classpath)(args)
 end
 
--- gets a JavaClass wrapping the java call `obj.getClass()`
-function JavaObject:getClass()
+-- gets a JavaClass wrapping the java call `obj._class()`
+function JavaObject:_class()
 	local classpath, jclass = self._env:_getObjClassPath(self._ptr)
 	local JavaClass = require 'java.class'
 	return JavaClass{
@@ -43,14 +43,14 @@ function JavaObject:getClass()
 	}
 end
 
--- shorthand for self:getClass():getMethod(args)
-function JavaObject:getMethod(args)
-	return self:getClass():getMethod(args)
+-- shorthand for self:_class():_method(args)
+function JavaObject:_method(args)
+	return self:_class():_method(args)
 end
 
 -- calls in java `obj.toString()`
 function JavaObject:getJavaToString()
-	return tostring(self:getMethod{
+	return tostring(self:_method{
 		name = 'toString',
 		sig = {'java/lang/String'},
 	}(self))

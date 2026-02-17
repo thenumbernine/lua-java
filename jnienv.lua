@@ -7,6 +7,7 @@ local JavaClass = require 'java.class'
 local JavaObject = require 'java.object'
 local prims = require 'java.util'.prims
 local getJNISig = require 'java.util'.getJNISig
+local sigStrToObj = require 'java.util'.sigStrToObj
 
 
 local JNIEnv = class()
@@ -21,7 +22,7 @@ function JNIEnv:init(ptr)
 	local java_lang_Class = self:_class'java/lang/Class'
 
 	-- TODO a way to cache method names, but we've got 3 things to identify them by: name, signature, static
-	java_lang_Class.java_lang_Class_getName = java_lang_Class:getMethod{
+	java_lang_Class.java_lang_Class_getName = java_lang_Class:_method{
 		name = 'getName',
 		sig = {'java/lang/String'},
 	}
@@ -106,7 +107,8 @@ function JNIEnv:_newArray(jtype, length, objInit)
 	-- TODO switch over all stored .classpath's to JNI-sig name qualifiers.
 	local resultClassPath = jtype..'[]'
 	return JavaObject.createObjectForClassPath(
-		resultClassPath, {
+		resultClassPath,
+		{
 			env = self,
 			ptr = obj,
 			classpath = resultClassPath,
@@ -126,7 +128,17 @@ end
 function JNIEnv:_getObjClassPath(objPtr)
 	local jclass = self:_getObjClass(objPtr)
 	local java_lang_Class = self:_class'java/lang/Class'
-	local classpath = java_lang_Class.java_lang_Class_getName(jclass)
+	local sigstr = java_lang_Class.java_lang_Class_getName(jclass)
+-- wait
+-- are you telling me
+-- when its a prim or an array, getName returns it as a signature-qualified string
+-- but when it's not, getName just returns the classpath?
+-- isn't that ambiguous?
+	sigstr = tostring(sigstr)
+--DEBUG:print('JNIEnv:_getObjClassPath', sigstr)	
+	-- opposite of util.getJNISig
+	local classpath = sigStrToObj(sigstr) or sigstr
+--DEBUG:print('JNIEnv:_getObjClassPath', classpath)
 	return classpath, jclass
 end
 
