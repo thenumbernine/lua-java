@@ -2,6 +2,7 @@ local class = require 'ext.class'
 local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
+local JavaCallResolve = require 'java.callresolve'
 
 
 local JavaObject = class()
@@ -32,7 +33,6 @@ function JavaObject:init(args)
 				local membersForName = classObj._members[k]
 				if membersForName then
 assert.gt(#membersForName, 0, k)
-if #membersForName > 1 then print("for name "..k.." there are "..#membersForName.." options") end
 					local member = membersForName[1]
 					local JavaField = require 'java.field'
 					local JavaMethod = require 'java.method'
@@ -157,7 +157,6 @@ print(debug.traceback())
 	local membersForName = classObj._members[k]
 	if membersForName then
 assert.gt(#membersForName, 0, k)
-if #membersForName > 1 then print("for name "..k.." there are "..#membersForName.." options") end
 --DEBUG:print('#membersForName', k, #membersForName)
 		-- how to resolve
 		-- now if its a field vs a method ...
@@ -167,17 +166,11 @@ if #membersForName > 1 then print("for name "..k.." there are "..#membersForName
 		if JavaField:isa(member) then
 			return member:_get(self)	-- call the getter of the field
 		elseif JavaMethod:isa(member) then
-			-- TODO return the method in a state to call this object?
-			-- or return a new wrapper for methods + call context of this object?
-			-- or for now return a function that calls the method with this
-			--if member._static then
-				-- bind 1st arg to the object
-			--	return function(...) return member(self, ...) end
-			--else
-				-- still wants self as 1st arg
-				-- so you can use Lua's a.b vs a:b tricks
-				return member
-			--end
+			-- now our choice of membersForName[] will depend on the calling args...
+			return JavaCallResolve{
+				caller = self,
+				options = membersForName,
+			}
 		else
 			error("got a member for field "..k.." with unknown type "..tostring(getmetatable(member).__name))
 		end
