@@ -17,6 +17,7 @@ local bootstrapClasses = {
 	['java.lang.Class'] = true,
 	['java.lang.reflect.Field'] = true,
 	['java.lang.reflect.Method'] = true,
+	['java.lang.reflect.Constructor'] = true,
 }
 
 
@@ -40,13 +41,17 @@ function JNIEnv:init(ptr)
 		name = 'getName',
 		sig = {'java.lang.String'},
 	})
+	java_lang_Class._java_lang_Class_getFields = assert(java_lang_Class:_method{
+		name = 'getFields',
+		sig = {'java.lang.reflect.Field[]'},
+	})
 	java_lang_Class._java_lang_Class_getMethods = assert(java_lang_Class:_method{
 		name = 'getMethods',
 		sig = {'java.lang.reflect.Method[]'},
 	})
-	java_lang_Class._java_lang_Class_getFields = assert(java_lang_Class:_method{
-		name = 'getFields',
-		sig = {'java.lang.reflect.Field[]'},
+	java_lang_Class._java_lang_Class_getConstructors = assert(java_lang_Class:_method{
+		name = 'getConstructors',
+		sig = {'java.lang.reflect.Constructor[]'},
 	})
 
 	local java_lang_reflect_Field = self:_class'java.lang.reflect.Field'
@@ -83,6 +88,19 @@ function JNIEnv:init(ptr)
 		sig = {'int'},
 	})
 
+	-- so if Method and Constructor both inherit from Executable, and it has getName, getParameterTypes, getModifiers, can I just get those methods from it and use on both?
+	-- or does the jmethodID not do vtable lookup?
+	-- I won't risk it
+	local java_lang_reflect_Constructor = self:_class'java.lang.reflect.Constructor'
+	java_lang_reflect_Constructor._java_lang_reflect_Constructor_getParameterTypes = assert(java_lang_reflect_Constructor:_method{
+		name = 'getParameterTypes',
+		sig = {'java.lang.Class[]'},
+	})
+	java_lang_reflect_Constructor._java_lang_reflect_Constructor_getModifiers = assert(java_lang_reflect_Constructor:_method{
+		name = 'getModifiers',
+		sig = {'int'},
+	})
+
 --DEBUG:print("JNIEnv._classesLoaded['java.lang.Class']", self._classesLoaded['java.lang.Class'])
 assert.eq(java_lang_Class._classpath, 'java.lang.Class')
 --DEBUG:print('!!! saved java_lang_Class._java_lang_Class_getName')
@@ -91,6 +109,7 @@ assert.eq(java_lang_Class._classpath, 'java.lang.Class')
 	java_lang_Class:_setupReflection()
 	java_lang_reflect_Field:_setupReflection()
 	java_lang_reflect_Method:_setupReflection()
+	java_lang_reflect_Constructor:_setupReflection()
 end
 
 function JNIEnv:_class(classpath)

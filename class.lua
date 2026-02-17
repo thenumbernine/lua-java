@@ -29,12 +29,15 @@ function JavaClass:_setupReflection()
 	self._members = {}	-- self._members[fieldname][fieldIndex] = JavaObject of field or member
 
 	local java_lang_Class = assert(env:_class'java.lang.Class')
+	-- do I need to save these?
 	self._javaObjFields = java_lang_Class._java_lang_Class_getFields(self)
 	self._javaObjMethods = java_lang_Class._java_lang_Class_getMethods(self)
---DEBUG:print(self._classpath, 'has', #self._javaObjFields, 'fields and', #self._javaObjMethods, 'methods')
+	self._javaObjConstructors = java_lang_Class._java_lang_Class_getConstructors(self)
+print(self._classpath..' has '..#self._javaObjFields..' fields and '..#self._javaObjMethods..' methods and '..#self._javaObjConstructors..' constructors')
 
 	local java_lang_reflect_Field = env:_class'java.lang.reflect.Field'
 	local java_lang_reflect_Method = env:_class'java.lang.reflect.Method'
+	local java_lang_reflect_Constructor = env:_class'java.lang.reflect.Constructor'
 
 	-- now convert the fields/methods into a key-based lua-table to integer-based lua-table for each name ...
 	for i=0,#self._javaObjFields-1 do
@@ -43,7 +46,6 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Field_getName(
 				field
 			))
---DEBUG:print('field['..i..'] = '..name)
 
 		-- fieldType is a jobject ... of a java.lang.Class
 		-- can I just treat it like a jclass?
@@ -54,6 +56,7 @@ function JavaClass:_setupReflection()
 				field
 			)
 		local fieldClassPath = tostring(java_lang_Class._java_lang_Class_getName(fieldType))
+		fieldClassPath = sigStrToObj(fieldClassPath) or fieldClassPath -- convert from sig-name to name-name
 --DEBUG:print('fieldType', fieldType, fieldClassPath)
 
 		local fieldModifiers = java_lang_reflect_Field
@@ -76,6 +79,7 @@ function JavaClass:_setupReflection()
 
 		self._members[name] = self._members[name] or table()
 		self._members[name]:insert(fieldObj)
+print('field['..i..'] = '..name, fieldClassPath)
 	end
 
 	-- TODO how does name resolution go? fields or methods first?
@@ -86,27 +90,28 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Method_getName(
 				method
 			))
---DEBUG:print('method['..i..'] = '..name, method)
 
 		local sig = table()
 		local methodReturnType = java_lang_reflect_Method
 			._java_lang_reflect_Method_getReturnType(
 				method
 			)
-		local methodReturnTypeName = tostring(java_lang_Class._java_lang_Class_getName(methodReturnType))
-		sig:insert(methodReturnTypeName)
+		local returnTypeClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodReturnType))
+		returnTypeClassPath = sigStrToObj(returnTypeClassPath) or returnTypeClassPath -- convert from sig-name to name-name
+		sig:insert(returnTypeClassPath)
 
-		local methodParameterTypes = java_lang_reflect_Method
+		local paramType = java_lang_reflect_Method
 			._java_lang_reflect_Method_getParameterTypes(
 				method
 			)
-		for j=0,#methodParameterTypes-1 do
-			local methodParamType = methodParameterTypes[j]
-			local methodParamTypeName = tostring(java_lang_Class._java_lang_Class_getName(methodParamType))
-			sig:insert(methodParamTypeName)
+		for j=0,#paramType-1 do
+			local methodParamType = paramType[j]
+			local paramClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodParamType))
+			paramClassPath = sigStrToObj(paramClassPath) or paramClassPath -- convert from sig-name to name-name
+			sig:insert(paramClassPath)
 		end
 
-		local methodModifiers = java_lang_reflect_Method
+		local modifiers = java_lang_reflect_Method
 			._java_lang_reflect_Method_getModifiers(
 				method
 			)
@@ -119,10 +124,52 @@ function JavaClass:_setupReflection()
 			env = env,
 			ptr = jmethodID,
 			sig = sig,
-			static = 0 ~= bit.band(methodModifiers, 8),
+			static = 0 ~= bit.band(modifiers, 8),
 		}
 		self._members[name] = self._members[name] or table()
 		self._members[name]:insert(methodObj)
+print('method['..i..'] = '..name, require'ext.tolua'(sig))
+	end
+
+	-- can constructors use JNIEnv.FromReflectedMethod ?
+	do
+		local name = '<init>'	-- all constructors have the same name
+		for i=0,#self._javaObjConstructors-1 do
+			local method = self._javaObjConstructors[i]
+
+			local sig = table()
+			sig:insert'void'	-- constructor signature has void return type
+
+			local paramType = java_lang_reflect_Constructor
+				._java_lang_reflect_Constructor_getParameterTypes(
+					method
+				)
+			for j=0,#paramType-1 do
+				local methodParamType = paramType[j]
+				local paramClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodParamType))
+				paramClassPath = sigStrToObj(paramClassPath) or paramClassPath -- convert from sig-name to name-name
+				sig:insert(paramClassPath)
+			end
+
+			local modifiers = java_lang_reflect_Constructor
+				._java_lang_reflect_Constructor_getModifiers(
+					method
+				)
+
+			local jmethodID = env._ptr[0].FromReflectedMethod(env._ptr, method._ptr)
+--DEBUG:print('jmethodID', jmethodID)
+			assert(jmethodID ~= nil, "couldn't get jmethodID from reflect constructor")
+
+			local methodObj = JavaMethod{
+				env = env,
+				ptr = jmethodID,
+				sig = sig,
+				static = 0 ~= bit.band(modifiers, 8),
+			}
+			self._members[name] = self._members[name] or table()
+			self._members[name]:insert(methodObj)
+print('constructor['..i..'] = '..require'ext.tolua'(sig))
+		end
 	end
 end
 
