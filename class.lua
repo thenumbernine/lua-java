@@ -48,17 +48,22 @@ function JavaClass:_setupReflection()
 
 	-- do I need to save these?
 	self._javaObjFields = java_lang_Class._java_lang_Class_getFields(self)
+	env:_exceptionClear()
 	self._javaObjMethods = java_lang_Class._java_lang_Class_getMethods(self)
+	env:_exceptionClear()
 	self._javaObjConstructors = java_lang_Class._java_lang_Class_getConstructors(self)
+	env:_exceptionClear()
 --DEBUG:print(self._classpath..' has '..#self._javaObjFields..' fields and '..#self._javaObjMethods..' methods and '..#self._javaObjConstructors..' constructors')
 
 	-- now convert the fields/methods into a key-based lua-table to integer-based lua-table for each name ...
 	for i=0,#self._javaObjFields-1 do
 		local field = self._javaObjFields[i]
+
 		local name = tostring(java_lang_reflect_Field
 			._java_lang_reflect_Field_getName(
 				field
 			))
+		env:_exceptionClear()
 
 		-- fieldType is a jobject ... of a java.lang.Class
 		-- can I just treat it like a jclass?
@@ -68,7 +73,11 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Field_getType(
 				field
 			)
+		env:_exceptionClear()
+
 		local fieldClassPath = tostring(java_lang_Class._java_lang_Class_getName(fieldType))
+		env:_exceptionClear()
+
 		fieldClassPath = sigStrToObj(fieldClassPath) or fieldClassPath -- convert from sig-name to name-name
 --DEBUG:print('fieldType', fieldType, fieldClassPath)
 
@@ -76,10 +85,13 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Field_getModifiers(
 				field
 			)
+		env:_exceptionClear()
 --DEBUG:print('fieldModifiers', fieldModifiers)
 
 		-- ok now switch this reflect field obj to a jni jfieldID
 		local jfieldID = env._ptr[0].FromReflectedField(env._ptr, field._ptr)
+		env:_exceptionClear()
+
 --DEBUG:print('jfieldID', jfieldID)
 		assert(jfieldID ~= nil, "couldn't get jfieldID from reflect field for "..tostring(name))
 
@@ -89,6 +101,7 @@ function JavaClass:_setupReflection()
 			sig = fieldClassPath,
 			static = 0 ~= bit.band(fieldModifiers, 8),	-- java.lang.reflect.Modifier.STATIC
 		}
+		env:_exceptionClear()
 
 		self._members[name] = self._members[name] or table()
 		self._members[name]:insert(fieldObj)
@@ -99,17 +112,24 @@ function JavaClass:_setupReflection()
 	-- I think they shouldn't ever overlap?
 	for i=0,#self._javaObjMethods-1 do
 		local method = self._javaObjMethods[i]
+
 		local name = tostring(java_lang_reflect_Method
 			._java_lang_reflect_Method_getName(
 				method
 			))
+		env:_exceptionClear()
 
 		local sig = table()
+
 		local methodReturnType = java_lang_reflect_Method
 			._java_lang_reflect_Method_getReturnType(
 				method
 			)
+		env:_exceptionClear()
+
 		local returnTypeClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodReturnType))
+		env:_exceptionClear()
+
 		returnTypeClassPath = sigStrToObj(returnTypeClassPath) or returnTypeClassPath -- convert from sig-name to name-name
 		sig:insert(returnTypeClassPath)
 
@@ -117,9 +137,14 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Method_getParameterTypes(
 				method
 			)
+		env:_exceptionClear()
+
 		for j=0,#paramType-1 do
 			local methodParamType = paramType[j]
+
 			local paramClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodParamType))
+			env:_exceptionClear()
+
 			paramClassPath = sigStrToObj(paramClassPath) or paramClassPath -- convert from sig-name to name-name
 			sig:insert(paramClassPath)
 		end
@@ -128,8 +153,11 @@ function JavaClass:_setupReflection()
 			._java_lang_reflect_Method_getModifiers(
 				method
 			)
+		env:_exceptionClear()
 
 		local jmethodID = env._ptr[0].FromReflectedMethod(env._ptr, method._ptr)
+		env:_exceptionClear()
+
 --DEBUG:print('jmethodID', jmethodID)
 		assert(jmethodID ~= nil, "couldn't get jmethodID from reflect method for "..tostring(name))
 
@@ -140,6 +168,8 @@ function JavaClass:_setupReflection()
 			sig = sig,
 			static = 0 ~= bit.band(modifiers, 8),
 		}
+		env:_exceptionClear()
+
 		self._members[name] = self._members[name] or table()
 		self._members[name]:insert(methodObj)
 --DEBUG:print('method['..i..'] = '..name, require'ext.tolua'(sig))
@@ -161,9 +191,14 @@ function JavaClass:_setupReflection()
 				._java_lang_reflect_Constructor_getParameterTypes(
 					method
 				)
+			env:_exceptionClear()
+
 			for j=0,#paramType-1 do
 				local methodParamType = paramType[j]
+
 				local paramClassPath = tostring(java_lang_Class._java_lang_Class_getName(methodParamType))
+				env:_exceptionClear()
+
 				paramClassPath = sigStrToObj(paramClassPath) or paramClassPath -- convert from sig-name to name-name
 				sig:insert(paramClassPath)
 			end
@@ -172,11 +207,15 @@ function JavaClass:_setupReflection()
 				._java_lang_reflect_Constructor_getModifiers(
 					method
 				)
+			env:_exceptionClear()
+
 --print('modifiers', modifiers)
 			-- NOTICE, ctors do NOT have 'static' flag,
 			-- even though  they are supposed to be called with the jclass as the argument (since the object does not yet exist)
 
 			local jmethodID = env._ptr[0].FromReflectedMethod(env._ptr, method._ptr)
+			env:_exceptionClear()
+
 --DEBUG:print('jmethodID', jmethodID)
 			assert(jmethodID ~= nil, "couldn't get jmethodID from reflect constructor")
 
@@ -191,6 +230,8 @@ function JavaClass:_setupReflection()
 				sig = sig,
 				static = 0 ~= bit.band(modifiers, 8),
 			}
+			env:_exceptionClear()
+
 			ctors:insert(methodObj)
 --DEBUG:print('constructor['..i..'] = '..require'ext.tolua'(sig))
 		end
@@ -199,7 +240,14 @@ function JavaClass:_setupReflection()
 		-- but it won't be listed in the java.lang.Class.getConstructors() list
 		--  unless it was explicitly defined
 		if not foundDefaultCtor then
-			local defaultCtorMethod = self:_method{name=name, sig={}}
+print('getting default ctor of class', self._classpath)
+			-- sometimes the default isn't there, like in java.lang.Class ...
+			local defaultCtorMethod = self:_method{
+				name = name,
+				sig = {},
+			}
+			env:_exceptionClear()
+
 			-- can this ever not exist?
 			-- maybe by protecting it or something?
 			if defaultCtorMethod then
@@ -207,6 +255,9 @@ function JavaClass:_setupReflection()
 			end
 		end
 	end
+
+	-- just in case
+	env:_exceptionClear()
 end
 
 -- equivalent of .class
@@ -238,6 +289,7 @@ args:
 --]]
 function JavaClass:_method(args)
 --DEBUG:assert(require 'java.jnienv':isa(self._env))
+
 	self._env:_checkExceptions()
 
 	assert.type(args, 'table')

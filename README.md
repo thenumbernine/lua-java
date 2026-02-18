@@ -72,6 +72,8 @@ local J = jvm.jniEnv
 
 - `J:_findClass(classpath)` = look up a Java class using C API `JNIEnv.FindClass`.
 
+- `J:_exceptionClear()` = clears the exception in JNIEnv via JNIEnv.ExceptionClear.
+
 - `ex = J:_exceptionOccurred()` = if an exception occurred then returns the exception JavaObject.
 
 - `J:_checkExceptions()` = if an exception occurred, throw it as an error.

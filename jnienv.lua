@@ -37,6 +37,8 @@ function JNIEnv:init(args)
 
 	-- always keep this non-nil for __index's sake
 	self._dontCheckExceptions = false
+	-- don't JavaObject-wrap excpetions during startup
+	self._exceptionsIgnoredDuringStartup = true
 
 	-- save these up front
 	-- must match bootstrapClasses for the subsequent class cache build to not cause a stack overflow
@@ -113,6 +115,9 @@ function JNIEnv:init(args)
 	self._java_lang_reflect_Field:_setupReflection()
 	self._java_lang_reflect_Method:_setupReflection()
 	self._java_lang_reflect_Constructor:_setupReflection()
+
+	-- now that reflection is setup, we can start JavaObject-wrapping excpetions
+	self._exceptionsIgnoredDuringStartup = false
 end
 
 function JNIEnv:_findClass(classpath)
@@ -260,21 +265,33 @@ function JNIEnv:_newArray(jtype, length, objInit)
 	)
 end
 
+function JNIEnv:_exceptionClear()
+	self._ptr[0].ExceptionClear(self._ptr)
+end
+
 -- check-and-return exceptions
 function JNIEnv:_exceptionOccurred()
+
+	-- during startup, reflection on base classes, I don't want this class' mechanism to be used for repackaging exceptions
+	-- while the classes they would be packaged with aren't yet fully initialized
+	-- so during startup all exceptions just get deferred
+	if self._exceptionsIgnoredDuringStartup then return end
+
 	local e = self._ptr[0].ExceptionOccurred(self._ptr)
 	if e == nil then return nil end
---DEBUG:print('got exception', e)
+print('got exception', e)
+print(debug.traceback())
 	if self._dontCheckExceptions then
 		error("java exception in exception handler")
 	end
 	assert(not self._dontCheckExceptions)
 	self._dontCheckExceptions = true
 
-	self._ptr[0].ExceptionClear(self._ptr)
+	self:_exceptionClear()
 
 	local classpath = self:_getObjClassPath(e)
---DEBUG:print('exception classpath', classpath)
+print('exception classpath', classpath)
+print(debug.traceback())
 	local result = JavaObject._createObjectForClassPath(
 		classpath,
 		{
@@ -372,7 +389,13 @@ function JNIEnv:__index(k)
 	-- do automatic namespace lookup here
 	-- symbol resolution of global scope of 'k'
 	-- I guess that means classes only
+
+	-- ignore exceptions while we search for the class
+	assert.eq(false, self._exceptionsIgnoredDuringStartup)
+	self._exceptionsIgnoredDuringStartup = true
 	local cl = self:_findClass(k)
+	self._exceptionsIgnoredDuringStartup = false
+
 	if cl then return cl end
 
 --DEBUG:print('JNIEnv __index', k)
@@ -401,10 +424,24 @@ Name.__concat = string.concat
 function Name:__index(k)
 	local v = rawget(Name, k)
 	if v ~= nil then return v end
+	
+	-- don't build namespaces off private vars
+	-- this is really here to prevent stackoverflows during __index operations
+	if k:match'^_' then
+		print('Name.__index', k, "I am reserving underscores for private variables.  You were about to invoke a name resolve")
+		print(debug.traceback())
+		return
+	end
 
 	local env = rawget(self, '_env')
 	local classpath = rawget(self, '_name')..'.'..k
+
+	-- ignore exceptions while we search for the class
+	assert.eq(false, env._exceptionsIgnoredDuringStartup)
+	env._exceptionsIgnoredDuringStartup = true
 	local cl = env:_findClass(classpath)
+	env._exceptionsIgnoredDuringStartup = false
+
 	if cl then return cl end
 
 --DEBUG:print('Name __index', k, 'classpath', classpath)
