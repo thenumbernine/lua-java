@@ -1,7 +1,11 @@
 local assert = require 'ext.assert'
 local class = require 'ext.class'
+local string = require 'ext.string'
+local table = require 'ext.table'
+
 
 local JavaCallResolve = class()
+JavaCallResolve.__name = 'JavaCallResolve'
 
 function JavaCallResolve:init(options)
 	self._options = assert(options)
@@ -35,5 +39,11 @@ function JavaCallResolve.resolve(options, ...)
 	end
 	return bestOption
 end
+
+function JavaCallResolve:__tostring()
+	return self.__name..'('..table.mapi(self._options, tostring):concat', '..')'
+end
+
+JavaCallResolve.__concat = string.concat
 
 return JavaCallResolve

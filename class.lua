@@ -8,6 +8,7 @@ local getJNISig = require 'java.util'.getJNISig
 local sigStrToObj = require 'java.util'.sigStrToObj
 local JavaCallResolve = require 'java.callresolve'
 
+
 -- is a Java class a Java object?
 -- should JavaClass inherit from JavaObject?
 local JavaClass = class()

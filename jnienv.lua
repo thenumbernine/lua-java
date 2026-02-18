@@ -24,6 +24,11 @@ local bootstrapClasses = {
 local JNIEnv = class()
 JNIEnv.__name = 'JNIEnv'
 
+--[[
+args:
+	vm = vm to store
+	ptr = JNIEnv* cdata
+--]]
 function JNIEnv:init(args)
 	self._vm = assert.index(args, 'vm')	-- jnienv will hold the vm just so the vm doesn't gc
 	self._ptr = assert.type(assert.index(args, 'ptr'), 'cdata', "expected a JNIEnv*")

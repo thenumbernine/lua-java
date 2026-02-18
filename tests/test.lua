@@ -5,20 +5,16 @@ local assert = require 'ext.assert'
 local classpath = 'Test'	-- i.e. Test.class, from Test.java
 
 do -- make sure it's built
-	local os = require 'ext.os'
-	local Targets = require 'make.targets'
-	local targets = Targets()
 	local dst = classpath..'.class'
-	local src = 'Test.java'
-	targets:add{
+	require 'make.targets'()
+	:add{
 		dsts = {dst},
-		srcs = {src},
+		srcs = {'Test.java'},
 		rule = function(r)
 			assert.eq(r.srcs[1]:gsub('%.java$', '%.class'), r.dsts[1])	-- or else find where it will go ...
-			assert(os.exec('javac "'..r.srcs[1]..'"'))
+			assert(require 'ext.os'.exec('javac "'..r.srcs[1]..'"'))
 		end,
-	}
-	targets:run(dst)
+	}:runAll()
 end
 
 

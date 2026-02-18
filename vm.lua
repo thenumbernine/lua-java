@@ -24,32 +24,36 @@ JavaVM.__name = 'JavaVM'
 
 --[[
 args:
-	version
-	classpath
+	version, defaults to JNI_VERSION_1_6
+	props = key/value of props to set with -D
 --]]
 function JavaVM:init(args)
 	args = args or {}
 
-	local optionTable = table()
-	if args.classpath then
-		local option = ffi.new'JavaVMOption'
-		option.optionString = '-Djava.class.path='..args.classpath
-		optionTable:insert(option)
+	-- save these separately so lua doesn't gc them
+	self.optionStrings = table()
+	self.optionTable = table()
+	if args.props then
+		for k,v in pairs(args.props) do
+			local str = '-D'..k..'='..v
+			self.optionStrings:insert(str)
+			local option = ffi.new'JavaVMOption'
+			option.optionString = str
+			self.optionTable:insert(option)
+		end
 	end
-	local options = ffi.new('JavaVMOption[?]', #optionTable, optionTable)
+	self.options = ffi.new('JavaVMOption[?]', #self.optionTable, self.optionTable)
 
 	local jvmargs = ffi.new'JavaVMInitArgs'
 	jvmargs.version = args.version or ffi.C.JNI_VERSION_1_6
-	jvmargs.nOptions = #optionTable
-	jvmargs.options = options
+	jvmargs.nOptions = #self.optionTable
+	jvmargs.options = self.options
 	jvmargs.ignoreUnrecognized = ffi.C.JNI_FALSE
 
 	local jvm = ffi.new'JavaVM*[1]'
 	local jniEnvPtr = ffi.new'JNIEnv*[1]'
 	local result = jni.JNI_CreateJavaVM(jvm, jniEnvPtr, jvmargs)
 	assert.eq(result, 0, 'JNI_CreateJavaVM')
---DEBUG:print('jvm', jvm[0])
---DEBUG:print('jniEnvPtr', jniEnvPtr[0])
 
 	if jvm[0] == nil then error("failed to find a JavaVM*") end
 	self._ptr = jvm[0]
@@ -58,6 +62,11 @@ function JavaVM:init(args)
 		vm = self,
 		ptr = jniEnvPtr[0],
 	}
+
+	-- no longer need to retain for gc
+	self.options = nil
+	self.optionTable = nil
+	self.optionStrings = nil
 end
 
 function JavaVM:destroy()

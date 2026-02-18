@@ -2,10 +2,27 @@
 
 I'm sure this has been done before, but here's my version.
 
-## Java
+# Quick Start:
+
 `J = require 'java'`
 
-Quick start to create a JVM and return its `JNIEnv` as `J`.
+This creates a JVM and return its `JNIEnv` as `J`.
+
+For more control of your initialization:
+```
+local JVM = require 'java.vm'
+local jvm = JVM{
+	version = <pick a version>,
+	props = {
+		['java.class.path'] = <provide a classpath string>,
+		['java.library.path'] = <etc>,
+		...
+	},
+}
+local J = jvm.jniEnv
+```
+
+# Reference
 
 ### JVM
 `JVM = require 'java.vm'`
