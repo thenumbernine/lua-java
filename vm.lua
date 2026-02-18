@@ -38,7 +38,7 @@ function JavaVM:init(args)
 			local str = '-D'..k..'='..v
 			self.optionStrings:insert(str)
 			local option = ffi.new'JavaVMOption'
-			option.optionString = str
+			option.optionString = ffi.cast('char*', str)
 			self.optionTable:insert(option)
 		end
 	end

@@ -2,6 +2,6 @@
 #include <jni.h>
 #include <stdio.h>
 
-JNIEXPORT void JNICALL Java_Runnable_run(JNIEnv * env) {
+JNIEXPORT void JNICALL Java_Runnable_run(JNIEnv * env, jclass class_) {
 	printf("testing testing\n");
 }

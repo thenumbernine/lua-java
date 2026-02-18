@@ -27,6 +27,10 @@ require 'make.targets'():add{
 	end,
 }:runAll()
 
+-- weird
+-- the jvm is getting the option -Djava.library.path=.
+-- it's running
+-- it's not finding
 local JVM = require 'java.vm'
 local jvm = JVM{
 	props = {
@@ -34,55 +38,8 @@ local jvm = JVM{
 		['java.library.path'] = '.',
 	}
 }
-print('jvm', jvm)
 local J = jvm.jniEnv
-print('jniEnv', J)
 
-print('java', J.java)
-print('java.lang', J.java.lang)
-print('java.lang.System', J.java.lang.System)
-print('java.lang.System.getProperty', J.java.lang.System.getProperty)
-
-print('System properties:')
-for _,k in ipairs{
-	'java.version',
-	'java.vendor',
-	'java.vendor.url',
-	'java.home',
-	'java.vm.specification.version',
-	--'java.specification.maintenance.version',	-- segfaulting?
-	'java.vm.specification.vendor',
-	'java.vm.specification.name',
-	'java.vm.version',
-	'java.vm.vendor',
-	'java.vm.name',
-	'java.specification.version',
-	'java.specification.vendor',
-	'java.specification.name',
-	'java.class.version',
-	'java.class.path',
-	'java.library.path',
-	'java.io.tmpdir',
-	--'java.compiler',
-	--'java.ext.dirs',
-	'os.name',
-	'os.arch',
-	'os.version',
-	'file.separator',
-	'path.separator',
-	'line.separator',
-	'user.name',
-	'user.home',
-	'user.dir',
-} do
-	print(k..' = '..require'ext.tolua'(tostring(J.java.lang.System:getProperty(k))))
-end
-os.exit()
-
-print(J.Runnable)
-print(J.Runnable.run)
-
--- java.library.path
-J.java.lang.System:loadLibrary'runnable_lib'
-
+-- this loads librunnable_lib.so
+-- so this can be used as an entry point for Java->JNI->LuaJIT code
 J.Runnable:run()

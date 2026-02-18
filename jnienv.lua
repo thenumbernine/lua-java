@@ -237,8 +237,12 @@ function JNIEnv:_newArray(jtype, length, objInit)
 	local field = newArrayForType[jtype] or 'NewObjectArray'
 	local obj
 	if field == 'NewObjectArray' then
-		-- TODO only expect classpath, or should I give an option for a JavaClass or a jclass?
-		local jclassObj = self:_class(jtype)
+		local jclassObj = jtype
+		if type(jtype) == 'string' then
+			jclassObj = self:_class(jclassObj)
+		else
+			assert(JavaClass:isa(jclassObj), "JNIEnv:_newArray expects a classpath or a JavaClass object")
+		end
 		-- TODO objInit as JavaObject, but how to encode null?
 		-- am I going to need a java.null placeholder object?
 		obj = self._ptr[0].NewObjectArray(self._ptr, length, jclassObj._ptr, objInit)
