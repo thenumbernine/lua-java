@@ -59,13 +59,15 @@ function JavaMethod:__call(thisOrClass, ...)
 	-- but I might as well, to be safe
 	self._env:_checkExceptions()
 
-	local callName, returnVoid, returnObject
+	local callName, returnVoid, returnBool, returnObject
 	if self._static then
 		returnVoid = callStaticNameForReturnType.void
+		returnBool = callStaticNameForReturnType.boolean
 		returnObject = callStaticNameForReturnType.object
 		callName = callStaticNameForReturnType[self._sig[1]] or returnObject
 	else
 		returnVoid = callNameForReturnType.void
+		returnBool = callNameForReturnType.boolean
 		returnObject = callNameForReturnType.object
 		callName = callNameForReturnType[self._sig[1]] or returnObject
 	end
@@ -82,6 +84,9 @@ function JavaMethod:__call(thisOrClass, ...)
 	self._env:_checkExceptions()
 
 	if callName == returnVoid then return end
+	if callName == returnBool then
+		return result ~= 0
+	end
 	if callName ~= returnObject then return result end
 
 	-- if Java returned null then return Lua nil

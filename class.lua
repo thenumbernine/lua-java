@@ -204,6 +204,19 @@ function JavaClass:_setupReflection()
 	end
 end
 
+-- equivalent of .class
+-- converts this from a JavaClass to a java.lang.Class JavaObject
+-- TODO - can I just make JavaClass a subclass of JavaObject?
+-- but if I did, what would I do about JavaObject:_class() returning the JavaClass of an object, versus this?
+function JavaClass:_class()
+	local JavaObject = require 'java.object'
+	return JavaObject{
+		env = self._env,
+		ptr = self._ptr,
+		classpath = 'java.lang.Class',	--self._classpath,
+	}
+end
+
 --[[
 args:
 	name
@@ -260,7 +273,7 @@ function JavaClass:_field(args)
 	end
 	if jfieldID == nil then
 		local ex = self._env:_exceptionOccurred()
-		return nil, "failed to find jfieldID "..tostring(fieldname)..' '..tostring(sig)..(static and ' static' or ''), ex
+		return nil, "failed to find jfieldID="..tostring(fieldname)..' sig='..tostring(sig)..(static and ' static' or ''), ex
 	end
 	return JavaField{
 		env = self._env,

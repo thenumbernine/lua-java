@@ -73,8 +73,13 @@ function JavaObject._createObjectForClassPath(classpath, args)
 end
 
 -- gets a JavaClass wrapping the java call `obj._class()`
+-- equivalent to java object.getClass(), 
+-- but that function returns a java.lang.Object instance of a java.lang.Class class, generic subclass of the class you're looking for
+-- while this returns the class that you're looking for
+-- TODO rename this to :_getClass()?
+-- though technically obj:getClass() == obj:_getClass():_class() is equivalent to java's `object.getClass()`
 function JavaObject:_class()
---DEBUG:print('	JavaObject:_class()')
+--DEBUG:print('JavaObject:_class()')
 	local env = self._env
 	local classpath, jclass = env:_getObjClassPath(self._ptr)
 --DEBUG:print('JavaObject:_class classpath='..classpath)
@@ -176,5 +181,11 @@ assert.gt(#membersForName, 0, k)
 		end
 	end
 end
+
+-- turns out in java `object.class` is just shorthand for `object.getClass()`
+-- there is no actual `class` field
+-- with that said, I don't think I'll try to replace .class
+-- if it's not a field then meh.
+-- .class will retain its original Lua class meaning
 
 return JavaObject

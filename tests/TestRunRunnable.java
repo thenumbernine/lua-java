@@ -1,9 +1,6 @@
-// this test class should do what the lua code is also doing: run the Runnable
 public class TestRunRunnable {
 	public static void main(String[] args) {
-		// works
-		//Runnable.runNative();
-		// also works
-		new TestNativeRunnable().run();
+		// must be run with java -Djava.library.path=.
+		new TestNativeRunnable(0,0).run();
 	}
 }

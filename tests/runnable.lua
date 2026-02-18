@@ -59,5 +59,34 @@ J.TestNativeRunnable:_new(ffi.cast('jlong', closure)):run()
 -- maybe with java.lang.reflect.Proxy?
 -- probably yes up until I try to cross the native C call bridge.
 
+-- TODO I would need generics to get this to work
+-- generics means I'd no longer cache methods by classpath alone (or would I?, could I just provide JavaClass instances per generic instances?)
 local Runnable = J.java.lang.Runnable
 print('Runnable', Runnable)
+
+-- Runnable the jclass doesn't have an isInterface method
+--print('Runnable.isInterface', Runnable.isInterface)
+--print('Runnable.getClassLoader', Runnable.getClassLoader)
+print('java.lang.Class.getClassLoader', J.java.lang.Class.getClassLoader)
+
+-- maybe it's unlisted, like the default ctor?
+print('Runnable:_name()', Runnable:_name())	-- "java.lang.Runnable" ... wait is this equivalent to Runnable.class.getName() ?
+print('Runnable:_class():getName()', Runnable:_class():getName())	-- same
+--print('Runnable:getName()', Runnable:getName())	-- doesn't work
+--print('Runnable:_class():_name()', Runnable:_class():_name())	-- doesn't work because there is no Object.getName() ? 
+print('Runnable:_class():_class()', Runnable:_class():_class())
+print('Runnable:_class():_class():_class()', Runnable:_class():_class():_class())
+--print('Runnable:_class():_class():getName()', Runnable:_class():_class():getName()) -- error, because the underlying Lua object is a JavaClass, which cannot access object member methods ... TODO straighten this out ...
+print('Runnable:_class():_class():_class():getName()', Runnable:_class():_class():_class():getName())
+os.exit()
+print('Runnable:_class():isInterface()', Runnable:_class():isInterface())
+-- but it's not finding this ...
+print('Runnable:_class():getClassLoader()', Runnable:_class():getClassLoader())	-- wait ... .class exists in Java, right?
+
+local Proxy = J.java.lang.reflect.Proxy
+print('Proxy', Proxy)
+
+--[[
+local proxyRunnable = Proxy:newProxyInstance()
+print('proxyRunnable', proxyRunnable)
+--]]
