@@ -44,6 +44,11 @@ local J = jvm.jniEnv
 -- so this can be used as an entry point for Java->JNI->LuaJIT code
 print('J.Runnable.run', J.Runnable.run)
 print('J.Runnable.runNative', J.Runnable.runNative)
-J.Runnable:runNative()	-- works
---J.Runnable:run()	-- errors, you can't run a member-method from a class ...
-J.Runnable:_new():run()
+
+-- I'd return something, but
+callback = function(arg)
+	print('hello from within Lua, arg', arg)
+end
+local ffi = require 'ffi'
+closure = ffi.cast('void *(*)(void*)', callback)	-- using a pthread signature here and in runnable_lib.c
+J.Runnable:_new(ffi.cast('jlong', closure)):run()
