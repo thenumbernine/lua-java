@@ -16,7 +16,18 @@ files = {
 	"method.lua",
 	"object.lua",
 	"string.lua",
+	"tests/A.java",
+	"tests/B.java",
+	"tests/C.java",
 	"tests/Test.java",
+	"tests/TestNativeRunnable.java",
+	"tests/TestRunRunnable.java",
+	"tests/applet.lua",
+	"tests/inheritence.lua",
+	"tests/println.lua",
+	"tests/runnable.lua",
+	"tests/runnable_lib.c",
+	"tests/runnable_mt.lua",
 	"tests/test.lua",
 	"util.lua",
 	"vm.lua",
@@ -25,6 +36,8 @@ deps = {
 	"ext",
 	"stl",
 	--"make",	-- for test
+	--"thread",	-- for test
+	--"ffi",	-- for test
 }
 generateBindings = ||{
 	{
