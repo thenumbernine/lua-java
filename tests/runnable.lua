@@ -45,5 +45,5 @@ local J = jvm.jniEnv
 print('J.Runnable.run', J.Runnable.run)
 print('J.Runnable.runNative', J.Runnable.runNative)
 J.Runnable:runNative()	-- works
---J.Runnable:run()	-- segfaults because its a member-method called with a class ...
+--J.Runnable:run()	-- errors, you can't run a member-method from a class ...
 J.Runnable:_new():run()

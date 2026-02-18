@@ -28,6 +28,7 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 	local JavaClass = require 'java.class'
 	local calledWithClass = JavaClass:isa(thisOrClass)
 	local triedToCallMemberMethodWithAClass
+	local triedToCallCtorWithAnObject
 
 	local numArgs = 1 + select('#', ...)
 	local bestOption
@@ -48,9 +49,12 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 					triedToCallMemberMethodWithAClass = true
 				end
 			else
+				-- TODO in JNI, if you call object.<init>, will it call the object's class's new, or will it error?
 				local methodAcceptsObject = not optionIsCtor				-- static or non-static accept objects, but not ctors
 				if methodAcceptsObject then
 					consider = true
+				else
+					triedToCallCtorWithAnObject = true
 				end
 			end
 
@@ -67,7 +71,9 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 
 	if not bestOption then
 		if triedToCallMemberMethodWithAClass then
-			return nil, "tried to call a member method with a class"
+			return nil, "tried to call a member method with a class.  use an object instead."
+		elseif triedToCallCtorWithAnObject then
+			return nil, "tried to call a ctor with an object.  use the class instead."
 		else
 			return nil, "failed to find a matching prototype"
 		end
