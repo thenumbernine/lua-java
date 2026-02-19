@@ -35,6 +35,7 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 		if #option._sig == numArgs then
 
 			-- now test if casting works ...
+			-- TODO this is incentive to store sig as JavaClasses
 
 
 			-- TODO calculate score based on how far away coercion is

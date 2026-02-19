@@ -134,7 +134,7 @@ function JavaObject:_instanceof(classTo)
 		if classTo == nil then
 			error("tried to cast to an unkonwn class "..classpath)
 		end
-	elseif type(classTo) == 'cdata' then 
+	elseif type(classTo) == 'cdata' then
 		classTo = env:_getClassForJClass(classTo)
 	elseif type(classTo) == 'table' then
 		-- TODO assert it's a JavaClass?
@@ -174,11 +174,20 @@ end
 
 JavaObject.__concat = string.concat
 
-function JavaObject:__eq(o)
-	if type(o) == 'cdata' then
-		return self._ptr == o
+-- uses JNIEnv.IsSameObject
+function JavaObject.__eq(a,b)
+	local env
+	if type(a) == 'table' then
+		env = a._env
+		a = a._ptr
 	end
-	return self._ptr == o
+	if type(b) == 'table' then
+		env = env or b._ptr
+		b = b._ptr
+	end
+	assert(env, "tried to use JavaObject to compare two non-JavaObject's")
+	-- assert they are cdata or nil ...
+	return 0 ~= env._ptr[0].IsSameObject(env._ptr, a, b)
 end
 
 function JavaObject:__index(k)
