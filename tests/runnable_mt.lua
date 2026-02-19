@@ -29,68 +29,35 @@ local jvm = JVM{
 }
 local J = jvm.jniEnv
 
-local threadArgTypeCode = [[
-typedef struct ThreadArg {
-	JNIEnv * jniEnvPtr;
-	JavaVM * jvmPtr;
-	pthread_t parentThread;
-} ThreadArg;
-]]
-ffi.cdef(threadArgTypeCode)
-
 local pthread = require 'ffi.req' 'c.pthread'
 print('parent thread pthread_self', pthread.pthread_self())
 
-local threadArg = ffi.new'ThreadArg[1]'
-threadArg[0].jniEnvPtr = J._ptr
-threadArg[0].jvmPtr = J._vm._ptr
-threadArg[0].parentThread = pthread.pthread_self()
-
 local LiteThread = require 'thread.lite'
 local thread = LiteThread{
-	arg = threadArg,
 	code = [=[
 local ffi = require 'ffi'
 local assert = require 'ext.assert'
 local pthread = require 'ffi.req' 'c.pthread'
 require 'java.ffi.jni'	-- needed before ffi.cdef
 
-ffi.cdef[[]=]..threadArgTypeCode..[=[]]
-arg = ffi.cast('ThreadArg*', arg)
 local childThread = pthread.pthread_self()
 print('child thread, pthread_self', childThread)
 
 print('hello from child thread Lua, arg', arg)
-local jvmPtr = arg.jvmPtr
+local jvmPtr = ffi.cast('JavaVM*', arg)
 print('jvmPtr', jvmPtr)
-local jniEnvPtr = arg.jniEnvPtr
-print('jniEnvPtr', jniEnvPtr)
-local parentThread = arg.parentThread
-print('parentThread', parentThread)
 
 
--- does jvm.GetEnv give the old or new env?
--- the new env
--- so there's no need to AttachThread
--- (so long as its a thread made by Java)
--- and there's no need to pass the JNIEnv ...
+local jniEnvPtr
 do
 	local jniEnvPtrArr = ffi.new('JNIEnv*[1]', nil)
 	assert.eq(ffi.C.JNI_OK, jvmPtr[0].GetEnv(jvmPtr, ffi.cast('void**', jniEnvPtrArr), ffi.C.JNI_VERSION_1_6))
 	print('jvmPtr GetEnv', jniEnvPtrArr[0])
+	jniEnvPtr = jniEnvPtrArr[0]	-- I have to use the new one
 end
 
 -- does the old env's GetJavaVM work?
 -- does the new env's GetJavaVM work?
-
-
-if parentThread ~= childThread then
-print("attaching JVM to new thread...")
-	local jniEnvPtrArr = ffi.new('JNIEnv*[1]', jniEnvPtr)
-	assert.eq(ffi.C.JNI_OK, jvmPtr[0].AttachCurrentThread(jvmPtr, jniEnvPtrArr, nil))
-print('jniEnvPtr after AttachCurrentThread', jniEnvPtrArr[0])
-	jniEnvPtr = jniEnvPtrArr[0]	-- I have to use the new one
-end
 
 local J = require 'java.jnienv'{
 	ptr = jniEnvPtr,
@@ -122,7 +89,7 @@ print('exceptions so far?', jniEnvPtr[0].ExceptionOccurred(jniEnvPtr))
 
 local runnable = J.TestNativeRunnable:_new(
 	ffi.cast('jlong', thread.funcptr),
-	ffi.cast('jlong', ffi.cast('void*', threadArg+0))
+	ffi.cast('jlong', ffi.cast('void*', J._vm._ptr))
 )
 
 --[[ run in same thread and quit - for testing
