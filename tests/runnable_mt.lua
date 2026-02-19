@@ -48,27 +48,7 @@ local jvmPtr = ffi.cast('JavaVM*', arg)
 print('jvmPtr', jvmPtr)
 
 
-local jniEnvPtr
-do
-	local jniEnvPtrArr = ffi.new('JNIEnv*[1]', nil)
-	assert.eq(ffi.C.JNI_OK, jvmPtr[0].GetEnv(jvmPtr, ffi.cast('void**', jniEnvPtrArr), ffi.C.JNI_VERSION_1_6))
-	print('jvmPtr GetEnv', jniEnvPtrArr[0])
-	jniEnvPtr = jniEnvPtrArr[0]	-- I have to use the new one
-end
-
--- does the old env's GetJavaVM work?
--- does the new env's GetJavaVM work?
-
-local J = require 'java.jnienv'{
-	ptr = jniEnvPtr,
-	vm = jvmPtr,
-}
--- reverse-order, create the JVM object from the JNIEnv object
-J._vm = setmetatable({
-	jniEnv = J,
-	_ptr = jvmPtr,
-	destroy = function() end,
-}, require 'java.vm')
+local J = require 'java.vm'{ptr=jvmPtr}.jniEnv
 
 
 -- TODO everything above here can be put inside a JavaThread class
@@ -83,7 +63,8 @@ print('J.java.lang.System', J.java.lang.System)
 print('J.java.lang.System.out', J.java.lang.System.out)
 
 J.java.lang.System.out:println("LuaJIT -> Java -> JNI -> (new thread) -> LuaJIT -> Java -> printing here")
-print('exceptions so far?', jniEnvPtr[0].ExceptionOccurred(jniEnvPtr))
+
+J:_checkExceptions()
 ]=],
 }
 
