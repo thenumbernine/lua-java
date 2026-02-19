@@ -439,10 +439,13 @@ function JNIEnv:_canConvertLuaToJavaArg(arg, sig)
 		-- convert ffi jni jprim to java prim
 		local ct = ffi.typeof(arg)
 		local ctname = tostring(ct)
-		if primNameForCTypes[ctname]
-		and isPrimitive[sig]
-		then
-			return true
+		local argJPrimname = primNameForCTypes[ctname]
+		local argFFIType = argJPrimname and ffiTypesForPrim[argJPrimname]
+		local sigFFIType = ffiTypesForPrim[sig]
+		if argFFIType and sigFFIType then
+			-- implicit cast only from smaller to larger types
+			return ffi.sizeof(argFFIType.ctype)
+				<= ffi.sizeof(sigFFIType.ctype)
 		end
 
 		-- TODO if it's a ffi jni prim

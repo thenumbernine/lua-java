@@ -57,6 +57,7 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 
 			if canUse then
 				-- TODO calculate score based on how far away coercion is
+				-- score by difference-in-size of prim args or difference-in-class-tree of classes
 				local score = 0
 				if score < bestScore then
 					bestScore = score
