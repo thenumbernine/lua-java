@@ -189,6 +189,8 @@ local J = jvm.jniEnv
 
 - `#s` aka `s:__len()` = returns the Java string length.
 
+- `s:length()` also returns the length.  This isn't by my design.  Java registers the `java.lang.String`'s `.length` as a *method*, not a *field*.
+
 ### JavaArray
 `JavaArray = require 'java.array'`
 - `JavaArray = JavaObject:subclass()`

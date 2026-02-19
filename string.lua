@@ -3,6 +3,7 @@ local JavaObject = require 'java.object'
 
 local JavaString = JavaObject:subclass()
 JavaString.__name = 'JavaString'
+JavaString.__index = JavaObject.__index	-- class() / :subclass() will override this, so reset it
 
 function JavaString:__tostring()
 	local env = self._env

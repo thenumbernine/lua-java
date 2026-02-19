@@ -14,6 +14,7 @@ end):setmetatable(nil)
 
 local JavaArray = JavaObject:subclass()
 JavaArray.__name = 'JavaArray'
+JavaArray.__index = JavaObject.__index	-- class() / :subclass() will override this, so reset it
 
 --[[
 args:

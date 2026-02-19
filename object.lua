@@ -176,7 +176,10 @@ function JavaObject:__index(k)
 	local v = cl[k]
 	if v ~= nil then return v end
 
-	if type(k) ~= 'string' then return end
+	if type(k) ~= 'string' then
+		-- TODO indexed keys for java.lang.Array's
+		return
+	end
 
 	-- don't build namespaces off private vars
 	if k:match'^_' then

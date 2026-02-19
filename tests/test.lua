@@ -18,11 +18,6 @@ print('JNI version', ('%x'):format(J:_version()))
 
 print('java.lang.Object', J:_findClass'java.lang.Object')
 print('java.lang.Class', J:_findClass'java.lang.Class')
-print('java.lang.String', J:_findClass'java.lang.String')
-
-local String = J.java.lang.String
-print('String', String)
-print('String:_isAssignableFrom(String)', String:_isAssignableFrom(String))
 
 --public class Test {
 local Test = J:_findClass'Test'
@@ -109,40 +104,6 @@ local testObjAsObject = testObj:_cast(J.java.lang.Object)
 print('(Object)testObj', testObjAsObject)
 local testObjAsObjectAsTest = testObjAsObject:_cast(Test)
 print('(Test)(Object)testObj', testObjAsObjectAsTest)
-
--- can I make a new String?
--- chicken-and-egg, you have to use JNIEnv
-local s = J:_str'new string'
-print('s = new string', s)
-print('#s', #s)
-print('s:_getClass()', s:_getClass())
-print('s:_getClass():_getDebugStr()', s:_getClass():_getDebugStr())
-print('s:_getClass():_name()', s:_getClass():_name())
-
-print('J', J)
-print('J.java', J.java)
-print('J.java.lang', J.java.lang)
-local String = J.java.lang.String
-print('java.lang.String', String)
-
--- can I make an array of Strings?
-local arr = J:_newArray('java.lang.String', 3)
-print('arr String[3]', arr)
-print('arr:_getClass():_name()', arr:_getClass():_name())	-- [Ljava/lang/String; ... i.e. String[]
--- can I get its length?
-print('#(arr String[3])', #arr)
-
-arr:_set(0, 'a')
-arr:_set(1, 'b')
-arr:_set(2, 'c')
-
-print('arr[0]', arr:_get(0))
-print('arr[1]', arr:_get(1))
-print('arr[2]', arr:_get(2))
-arr[1] = J:_str'testing'
-print('arr[0]', arr[0])
-print('arr[1]', arr[1])
-print('arr[2]', arr[2])
 
 local doubleArr = J:_newArray('double', 5)
 print('doubleArr', doubleArr)

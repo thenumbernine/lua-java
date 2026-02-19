@@ -32,6 +32,7 @@ files = {
 	"tests/runnable.lua",
 	"tests/runnable_lib.c",
 	"tests/runnable_mt.lua",
+	"tests/string.lua",
 	"tests/test.lua",
 	"util.lua",
 	"vm.lua",
