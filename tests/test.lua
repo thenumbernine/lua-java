@@ -63,14 +63,14 @@ print('testObj:ol((float)1)', testObj:ol(J.float(1)))						-- correct
 print('testObj:ol((double)1)', testObj:ol(J.double(1)))						-- correct
 print('testObj:ol((long)1)', testObj:ol(J.long(1)))							-- correct
 
--- overload of boxed types
+-- overload of boxed types ... when reslver has prim or Object it will choose Object ..
 print'from boxed prims'
-print('testObj:ol(new Boolean(true))', testObj:ol(J.java.lang.Boolean:_new(true)))									-- correct
-print('testObj:ol(new Short(1))', testObj:ol(J.java.lang.Short:_new(1)))						-- correct
-print('testObj:ol(new Int(1))', testObj:ol(J.java.lang.Integer:_new(1)))							-- correct
-print('testObj:ol(new Float(1))', testObj:ol(J.java.lang.Float:_new(1)))						-- correct
-print('testObj:ol(new Double(1))', testObj:ol(J.java.lang.Double:_new(1)))						-- correct
-print('testObj:ol(new Long(1))', testObj:ol(J.java.lang.Long:_new(1)))							-- correct
+print('testObj:ol(new Boolean(true))', testObj:ol(J.java.lang.Boolean:_new(true)))		-- RIGHT - Object
+print('testObj:ol(new Short(1))', testObj:ol(J.java.lang.Short:_new(1)))				-- RIGHT - Object
+print('testObj:ol(new Int(1))', testObj:ol(J.java.lang.Integer:_new(1)))				-- RIGHT - Object
+print('testObj:ol(new Float(1))', testObj:ol(J.java.lang.Float:_new(1)))				-- WRONG - float
+print('testObj:ol(new Double(1))', testObj:ol(J.java.lang.Double:_new(1)))				-- WRONG - double
+print('testObj:ol(new Long(1))', testObj:ol(J.java.lang.Long:_new(1)))					-- RIGHT - Object
 
 -- overload from objects
 print'from objects'

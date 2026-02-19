@@ -452,7 +452,7 @@ local function getPrimWidening(from, to)
 	-- TODO this is identical to below except i'm too lazy to consolidate it yet
 	if from == 'boolean' then
 		if to == 'boolean'then return true, 0
-		end	
+		end
 	elseif from == 'byte' then
 		if to == 'byte'then return true, 0
 		elseif to == 'short'then return true, 1
@@ -510,15 +510,15 @@ function JNIEnv:_canConvertLuaToJavaArg(arg, sig)
 		return sig == 'boolean' or sig == 'java.lang.Boolean'
 	elseif t == 'table' then
 		local unboxedSig = getUnboxedPrimitiveForClasspath[sig] or sig
-		if isPrimitive[unboxedSig] 
+		if isPrimitive[unboxedSig]
 		and JavaObject:isa(arg)
-		then 
+		then
 			-- if incoming is boxed type and sig is prim then yes
 			local unboxedArgType = getUnboxedPrimitiveForClasspath[arg._classpath]
 			if unboxedArgType then
 				return getPrimWidening(unboxedArgType, unboxedSig)
 			end
-			return false 
+			return false
 		end
 		local nonarraybase = sig:match'^(.*)%['
 		if nonarraybase then
@@ -608,8 +608,15 @@ function JNIEnv:_luaToJavaArg(arg, sig)
 			error("can't cast boolean to "..sig)
 		end
 	elseif t == 'table' then
+--print('arg is table, sig is', sig)
 		if sig then
 			-- TODO who is calling this without sig anyways?
+-- ALSO TODO
+-- if a function has a signature of a prim and of Object
+-- and you pass it a boxed prim
+-- which will resolve?
+-- in fact, Object does resolve
+-- so so far so good
 			if isPrimitive[sig] then
 				if JavaObject:isa(arg) then
 					local unboxedArgType = getUnboxedPrimitiveForClasspath[arg._classpath]
