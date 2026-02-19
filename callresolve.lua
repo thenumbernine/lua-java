@@ -25,11 +25,6 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 	-- ok now ...
 	-- we gotta match up ... args with all the method option arsg
 
-	local JavaClass = require 'java.class'
-	local calledWithClass = JavaClass:isa(thisOrClass)
-	local triedToCallMemberMethodWithAClass
-	local triedToCallCtorWithAnObject
-
 	local numArgs = 1 + select('#', ...)
 	local bestOption
 	local bestScore = math.huge
@@ -38,45 +33,17 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 		-- call args #1 is the this-or-class
 		-- the rest will match up
 		if #option._sig == numArgs then
-			local optionIsCtor = option._isCtor
-
-			local consider
-			if calledWithClass then
-				local methodAcceptsClass = option._static or optionIsCtor	-- only static or ctor can handle class as 1st arg
-				if methodAcceptsClass then
-					consider = true
-				else
-					triedToCallMemberMethodWithAClass = true
-				end
-			else
-				-- TODO in JNI, if you call object.<init>, will it call the object's class's new, or will it error?
-				local methodAcceptsObject = not optionIsCtor				-- static or non-static accept objects, but not ctors
-				if methodAcceptsObject then
-					consider = true
-				else
-					triedToCallCtorWithAnObject = true
-				end
-			end
-
-			if consider then
-				-- TODO calculate score based on how far away coercion is
-				local score = 0
-				if score < bestScore then
-					bestScore = score
-					bestOption = option
-				end
+			-- TODO calculate score based on how far away coercion is
+			local score = 0
+			if score < bestScore then
+				bestScore = score
+				bestOption = option
 			end
 		end
 	end
 
 	if not bestOption then
-		if triedToCallMemberMethodWithAClass then
-			return nil, "tried to call a member method with a class.  use an object instead."
-		elseif triedToCallCtorWithAnObject then
-			return nil, "tried to call a ctor with an object.  use the class instead."
-		else
-			return nil, "failed to find a matching prototype"
-		end
+		return nil, "failed to find a matching prototype"
 	end
 
 	return bestOption

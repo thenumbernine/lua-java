@@ -1,7 +1,7 @@
-local class = require 'ext.class'
 local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
+local JavaObject = require 'java.object'
 local JavaMethod = require 'java.method'
 local JavaField = require 'java.field'
 local getJNISig = require 'java.util'.getJNISig
@@ -11,7 +11,7 @@ local JavaCallResolve = require 'java.callresolve'
 
 -- is a Java class a Java object?
 -- should JavaClass inherit from JavaObject?
-local JavaClass = class()
+local JavaClass = JavaObject:subclass()
 JavaClass.__name = 'JavaClass'
 
 function JavaClass:init(args)
@@ -267,7 +267,7 @@ function JavaClass:_class()
 	return JavaObject{
 		env = self._env,
 		ptr = self._ptr,
-		classpath = 'java.lang.Class',	--self._classpath,
+		classpath = 'java.lang.Class',
 	}
 end
 
@@ -419,16 +419,6 @@ function JavaClass:__index(k)
 	if membersForName then
 		assert.gt(#membersForName, 0, k)	-- otherwise the entry shouldn't be there...
 --DEBUG:print('#membersForName', k, #membersForName)
-		--[[ filter out non-static methods?
-		-- no not yet, we want classes to be able to reference their object methods as JavaMethod-objects,
-		-- even when not calling them
-		membersForName = membersForName:filteri(function(method)
-			return method.static
-		end)
-		if #membersForName == 0 then
-			error("tried to call a non-static method from a class: "..k)
-		end
-		--]]
 		-- how to resolve
 		-- now if its a field vs a method ...
 		local member = membersForName[1]

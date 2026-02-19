@@ -1,22 +1,15 @@
 #!/usr/bin/env luajit
--- following https://www.inonit.com/cygwin/jni/invocationApi/c.html
+-- just run a bunch of stuff and see if anything crashes
 local assert = require 'ext.assert'
 
-local classpath = 'Test'	-- i.e. Test.class, from Test.java
-
-do -- make sure it's built
-	local dst = classpath..'.class'
-	require 'make.targets'()
-	:add{
-		dsts = {dst},
-		srcs = {'Test.java'},
-		rule = function(r)
-			assert.eq(r.srcs[1]:gsub('%.java$', '%.class'), r.dsts[1])	-- or else find where it will go ...
-			assert(require 'ext.os'.exec('javac "'..r.srcs[1]..'"'))
-		end,
-	}:runAll()
-end
-
+require 'make.targets'():add{	-- make sure it's built
+	dsts = {'Test.class'},
+	srcs = {'Test.java'},
+	rule = function(r)
+		assert.eq(r.srcs[1]:gsub('%.java$', '%.class'), r.dsts[1])	-- or else find where it will go ...
+		assert(require 'ext.os'.exec('javac "'..r.srcs[1]..'"'))
+	end,
+}:runAll()
 
 local ffi = require 'ffi'
 local J = require 'java'
@@ -27,7 +20,7 @@ print('java.lang.Class', J:_findClass'java.lang.Class')
 print('java.lang.String', J:_findClass'java.lang.String')
 
 --public class Test {
-local Test = J:_findClass(classpath)	-- fast but verbose way
+local Test = J:_findClass'Test'
 print("Test from J:_findClass'Test'", Test)
 -- J:_findClass returns a JavaClass wrapper to a jclass pointer
 -- so Test._ptr is a ... jobject ... of the class
@@ -38,7 +31,7 @@ assert.eq(Test, Test2)
 print('Test:_name()', Test:_name())
 -- TODO how to get some name other than "java.lang.Class" ?
 -- TODO how to enumerate all properties of a JavaClass?
---]]
+
 
 --public static String test() { return "Testing"; }
 -- TODO is there a way to get a method signature?
@@ -149,3 +142,5 @@ print('charArr[0]', charArr:_get(0))
 print('charArr[1]', charArr:_get(1))
 print('charArr[0]', charArr[0])
 print('charArr[1]', charArr[1])
+
+print'DONE'

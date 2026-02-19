@@ -59,20 +59,30 @@ J.TestNativeRunnable:_new(ffi.cast('jlong', closure)):run()
 -- maybe with java.lang.reflect.Proxy?
 -- probably yes up until I try to cross the native C call bridge.
 
---[[ wait maybe this won't work
+-- [[ wait maybe this won't work
 -- TODO I would need generics to get this to work
 -- generics means I'd no longer cache methods by classpath alone (or would I?, could I just provide JavaClass instances per generic instances?)
 local Runnable = J.java.lang.Runnable
 print('Runnable', Runnable)
 
 -- Runnable the jclass doesn't have an isInterface method
---print('Runnable.isInterface', Runnable.isInterface)
+--print('Runnable.isInterface', Runnable.isInterface)			-- nil
 --print('Runnable.getClassLoader', Runnable.getClassLoader)
 print('java.lang.Class.getClassLoader', J.java.lang.Class.getClassLoader)
 
--- maybe it's unlisted, like the default ctor?
 print('Runnable:_name()', Runnable:_name())	-- "java.lang.Runnable" ... wait is this equivalent to Runnable.class.getName() ?
-print('Runnable:_class():getName()', Runnable:_class():getName())	-- same
+
+-- doesn't work because ... ? 
+-- 'getName' is a nil value ?
+--print('Runnable:getName()', Runnable:getName())	
+-- sure enough,  there's no "getName" in Runnable
+--print('Runnable._members.getName', Runnable._members.getName)
+
+print('java.lang.Class.getName(Runnable)', J.java.lang.Class.getName(Runnable))	-- "java.lang.Runnable"
+
+
+print('Runnable:_class():getName()', Runnable:_class():getName())	-- works, same, "java.lang.Runnable"
+
 --print('Runnable:getName()', Runnable:getName())	-- doesn't work
 --print('Runnable:_class():_name()', Runnable:_class():_name())	-- doesn't work because there is no Object.getName() ? 
 print('Runnable:_class():_getClass()', Runnable:_class():_getClass())
