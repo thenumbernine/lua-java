@@ -105,6 +105,10 @@ local J = jvm.jniEnv
 
 - `cl = obj:_getClass()` = get class
 
+- `castObj = obj:_cast(classTo)` = cast obj to class `classTo`.  Accepts a JavaClass, a string for a classpath, or a cdata of a jclass.
+
+- `bool = obj:_instanceof(classTo)` = tests if it can cast, returns boolean.
+
 - `method = obj:_method(args)` = shorthand for `obj:_getClass():method(args)`.
 
 - `field = obj:_field(args)` = shorthand

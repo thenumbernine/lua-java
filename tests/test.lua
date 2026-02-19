@@ -93,14 +93,20 @@ print('Test:test()', Test:test())
 
 print('Test:_super()', Test:_super())
 
+print('testObj instanceof Object', testObj:_instanceof(J.java.lang.Object))
+local testObjAsObject = testObj:_cast(J.java.lang.Object)
+print('(Object)testObj', testObjAsObject)
+local testObjAsObjectAsTest = testObjAsObject:_cast(Test)
+print('(Test)(Object)testObj', testObjAsObjectAsTest)
+
 -- can I make a new String?
 -- chicken-and-egg, you have to use JNIEnv
 local s = J:_str'new string'
-print('new string', s)
-print('#(new string)', #s)
-print('new string class', s:_getClass())
-print('new string class', s:_getClass():_getDebugStr())
-print('new string class', s:_getClass():_name())
+print('s = new string', s)
+print('#s', #s)
+print('s:_getClass()', s:_getClass())
+print('s:_getClass():_getDebugStr()', s:_getClass():_getDebugStr())
+print('s:_getClass():_name()', s:_getClass():_name())
 
 print('J', J)
 print('J.java', J.java)
@@ -132,7 +138,7 @@ print('doubleArr', doubleArr)
 print('doubleArr:_getClass()', doubleArr:_getClass())	-- wait, this returns "char[]", probably because that was given to jniEnv to create the array
 print('doubleArr._getClass()._name()', doubleArr:_getClass():_name())	-- "double[]"
 print('doubleArr:_getClass():_super()', doubleArr:_getClass():_super())
-print('doubleArr:_super()', doubleArr:_super())
+--print('doubleArr:_super()', doubleArr:_super())
 
 doubleArr:_set(3, 3.14)
 print('doubleArr[3]', doubleArr:_get(3))

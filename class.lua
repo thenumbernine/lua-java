@@ -385,24 +385,6 @@ print('JavaClass:_name', type(classpath), classpath)
 	return classpath
 end
 
-function JavaClass:_getDebugStr()
-	return self.__name..'('
-		..tostring(self._classpath)
-		..' '
-		..tostring(self._ptr)
-		..')'
-end
-
-function JavaClass:__tostring()
-	return self.__name..'('
-		..tostring(self._classpath)
-		..' '
-		..tostring(self._ptr)
-		..')'
-end
-
-JavaClass.__concat = string.concat
-
 function JavaClass:__index(k)
 
 	-- if self[k] exists then this isn't called
