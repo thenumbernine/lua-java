@@ -16,8 +16,13 @@ local J = require 'java'
 print('JNIEnv', J)
 print('JNI version', ('%x'):format(J:_version()))
 
+print('java.lang.Object', J:_findClass'java.lang.Object')
 print('java.lang.Class', J:_findClass'java.lang.Class')
 print('java.lang.String', J:_findClass'java.lang.String')
+
+local String = J.java.lang.String
+print('String', String)
+os.exit()
 
 --public class Test {
 local Test = J:_findClass'Test'
@@ -47,6 +52,12 @@ print('testObj', testObj)
 
 local testObj = Test:_new()
 print('testObj', testObj)
+
+-- overloading lookup
+print('testObj:ol(1)', testObj:ol(1ULL))	-- TODO this registers as a jdouble when it should register as a jlong
+print('testObj:ol(1)', testObj:ol(1))
+print('testObj:ol("foo")', testObj:ol('foo'))
+print('testObj:ol("foo")', testObj:ol(J:_str'foo'))
 
 
 -- test J:_new(classpath, args)

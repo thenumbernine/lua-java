@@ -1,6 +1,7 @@
 local assert = require 'ext.assert'
 local string = require 'ext.string'
 local table = require 'ext.table'
+local tolua = require 'ext.tolua'
 local JavaObject = require 'java.object'
 local JavaMethod = require 'java.method'
 local JavaField = require 'java.field'
@@ -166,7 +167,7 @@ function JavaClass:_setupReflection()
 
 			self._members[name] = self._members[name] or table()
 			self._members[name]:insert(methodObj)
---DEBUG:print('method['..i..'] = '..name, require'ext.tolua'(sig))
+--DEBUG:print('method['..i..'] = '..name, tolua(sig))
 		end
 	end
 
@@ -225,7 +226,7 @@ function JavaClass:_setupReflection()
 			}
 
 			ctors:insert(methodObj)
---DEBUG:print('constructor['..i..'] = '..require'ext.tolua'(sig))
+--DEBUG:print('constructor['..i..'] = '..tolua(sig))
 		end
 
 		-- another Java quirk: every function has a default no-arg constructor
@@ -348,7 +349,13 @@ function JavaClass:_new(...)
 		-- TODO just do it once
 		local ctor = JavaCallResolve.resolve(ctors, self, ...)
 		if not ctor then
-			error("args mismatch")
+			error("couldn't match args to any ctors of "..self._classpath..":\n"
+				..'\t'..ctors:mapi(function(x) return tolua(x._sig) end)
+					:concat'\n\t'..'\n'
+				..'args:\n'
+				..'\t'..table{...}:mapi(function(x) return tolua(x) end)
+					:concat'\n\t'
+			)
 		end
 		return ctor:_new(self, ...)
 	end
@@ -358,6 +365,32 @@ function JavaClass:_super()
 	local env = self._env
 	local jsuper = env._ptr[0].GetSuperclass(env._ptr, self._ptr)
 	return env:_getClassForJClass(jsuper)
+end
+
+-- idk that theres an equivalent operator in java?
+-- does instanceof of an object of the class
+function JavaClass:_isAssignableFrom(classTo)
+	local env = self._env
+	if type(classTo) == 'string' then
+		local classpath = classTo
+		classTo = env:_findClass(classpath)
+		if classTo == nil then
+			error("tried to cast to an unknown class "..classpath)
+		end
+	elseif type(classTo) == 'cdata' then
+		classTo = env:_getClassForJClass(classTo)
+	elseif type(classTo) == 'table' then
+		-- TODO assert it's a JavaClass?
+		-- TODO if it's a JavaObject then get its :_getClass() ?
+	else
+		error("can't cast to non-class "..tostring(classTo))
+	end
+	local canCast = env._ptr[0].IsAssignableFrom(
+		env._ptr,
+		self._ptr,
+		classTo._ptr
+	)
+	return canCast ~= 0, classTo
 end
 
 -- calls in java `class.getName()`

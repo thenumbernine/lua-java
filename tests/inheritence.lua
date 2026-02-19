@@ -23,6 +23,18 @@ print('A', A)
 print('B', B)
 print('C', C)
 
+print('A isAssignableFrom A', A:_isAssignableFrom(A))
+print('A isAssignableFrom B', A:_isAssignableFrom(B))
+print('A isAssignableFrom C', A:_isAssignableFrom(C))
+
+print('B isAssignableFrom A', B:_isAssignableFrom(A))
+print('B isAssignableFrom B', B:_isAssignableFrom(B))
+print('B isAssignableFrom C', B:_isAssignableFrom(C))
+
+print('C isAssignableFrom A', C:_isAssignableFrom(A))
+print('C isAssignableFrom B', C:_isAssignableFrom(B))
+print('C isAssignableFrom C', C:_isAssignableFrom(C))
+
 local a = A:_new()
 local b = B:_new()
 local c = C:_new()

@@ -54,8 +54,12 @@ local thread = LiteThread{
 ]=],
 }
 
+local ffi = require 'ffi'
 local th = J.java.lang.Thread:_new(
-	J.TestNativeRunnable:_new(thread.funcptr, J._vm._ptr)
+	J.TestNativeRunnable:_new(	
+		ffi.cast('jlong', thread.funcptr),
+		ffi.cast('jlong', J._vm._ptr)
+	)
 )
 print('thread', th)
 th:start()

@@ -60,17 +60,14 @@ function JavaMethod:__call(thisOrClass, ...)
 	-- but I might as well, to be safe
 	env:_checkExceptions()
 
-	local callName, returnVoid, returnBool, returnObject
+	local returnType = self._sig[1]
+	local callName
 	if self._static then
-		returnVoid = callStaticNameForReturnType.void
-		returnBool = callStaticNameForReturnType.boolean
-		returnObject = callStaticNameForReturnType.object
-		callName = callStaticNameForReturnType[self._sig[1]] or returnObject
+		callName = callStaticNameForReturnType[returnType] 
+			or callStaticNameForReturnType.object
 	else
-		returnVoid = callNameForReturnType.void
-		returnBool = callNameForReturnType.boolean
-		returnObject = callNameForReturnType.object
-		callName = callNameForReturnType[self._sig[1]] or returnObject
+		callName = callNameForReturnType[returnType] 
+			or callNameForReturnType.object
 	end
 
 --print('callName', callName)
@@ -85,29 +82,7 @@ function JavaMethod:__call(thisOrClass, ...)
 
 	env:_checkExceptions()
 
-	if callName == returnVoid then return end
-	if callName == returnBool then
-		return result ~= 0
-	end
-	if callName ~= returnObject then return result end
-
-	-- if Java returned null then return Lua nil
-	-- ... if the JNI is returning null object results as NULL pointers ...
-	-- ... and the JNI itself segfaults when it gets passed a NULl that it doesn't like ...
-	-- ... where else do I have to bulletproof calls to the JNI?
-	if result == nil then
-		return nil
-	end
-
-	-- convert / wrap the result
-	return JavaObject._createObjectForClassPath(
-		self._sig[1],
-		{
-			env = env,
-			ptr = result,
-			classpath = self._sig[1],
-		}
-	)
+	return env:_javaToLuaArg(result, returnType)
 end
 
 -- calls in Java `new classObj(...)`

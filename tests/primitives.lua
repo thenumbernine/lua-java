@@ -17,8 +17,12 @@ print('Void.TYPE._ptr', Void.TYPE._ptr)
 assert.eq(J.java.lang.Void.TYPE, J.java.lang.Void.TYPE)
 
 -- Void.TYPE.getName() returns "void"
--- prim names are recognized at global in the Java namespace?
 print('Void.TYPE:getName()', Void.TYPE:getName())
+-- are prim names recognized at global in the Java namespace via FindClass?
+print('J.void', J.void)
+-- ... no, they are not.
+-- why it would help if they are?
+-- because signature resolution, especially for IsInstanceOf checking
 
 -- Void.TYPE is not Void
 -- what's the difference again?
@@ -39,7 +43,7 @@ for _,name in ipairs(table.keys(Class._members):sort()) do
 	local membersForName = Class._members[name]
 	print('', name, #membersForName)
 end
--- ahhhaa 
+-- ahhhaa
 -- because it's a Java v22 method
 -- and I'm using Java v21
 --]]

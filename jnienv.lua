@@ -11,6 +11,9 @@ local getJNISig = require 'java.util'.getJNISig
 local sigStrToObj = require 'java.util'.sigStrToObj
 
 
+local int64_t = ffi.typeof'int64_t'
+local uint64_t = ffi.typeof'uint64_t'
+
 local isPrimitive = prims:mapi(function(name) return true, name end):setmetatable(nil)
 
 local bootstrapClasses = {
@@ -364,14 +367,85 @@ end
 
 -- putting _luaToJavaArgs here so it can auto-convert some objects like strings
 
+-- same as below but doesnt actually convert, just returns true/false
+-- used for call resolution / overload matching
+function JNIEnv:_canConvertLuaToJavaArg(arg, sig)
+	local t = type(arg)
+	if t == 'table' then
+		if isPrimitive[sig] then return false end
+		local nonarraybase = sig:match'^(.*)%['
+		if nonarraybase then
+			if isPrimitive[nonarraybase] then return false end
+		end
+		return arg:_instanceof(sig)
+	elseif t == 'string' then
+		if isPrimitive[sig] then
+			return false
+		end
+		local nonarraybase = sig:match'^(.*)%['
+		if nonarraybase then
+			if isPrimitive[nonarraybase] then return false end
+		end
+print('type is string, comparing sig class', sig)
+		local isinstanceof = self:_findClass'java.lang.String':_instanceof(sig)
+print('...got', isinstanceof)		
+		return isinstanceof 
+	elseif t == 'cdata' then
+		-- TODO test for all j* prim types
+		local ct = ffi.typeof(arg)
+		if ct == int64_t
+		or ct == uint64_t
+		then
+			return true
+		end
+		error("idk how to check conversion for namespace matching from pointers yet ... but it should start with converting the pointer to a JavaObject ...")
+		return arg
+	elseif t == 'number' or t == 'boolean' then
+		return isPrimitive[sig]
+	elseif t == 'nil' then
+		-- wait, in java can you pass null to a primitive?  I think not ...
+		return not isPrimitive[sig]
+	end
+	return false
+end
+
 function JNIEnv:_luaToJavaArg(arg, sig)
 	local t = type(arg)
 	if t == 'table' then
+		if sig then
+			-- TODO who is calling this without sig anyways?
+			if isPrimitive[sig] then 
+				error("can't cast object to primitive")
+			end
+			local nonarraybase = sig:match'^(.*)%['
+			if nonarraybase then
+				if isPrimitive[nonarraybase] then 
+					error("can't cast object to primitive array")
+				end
+			end
+		end
 		-- assert it is a cdata
 		return arg._ptr
 	elseif t == 'string' then
+		if isPrimitive[sig] then 
+			error("can't cast string to primitive")
+		end
+		local nonarraybase = sig:match'^(.*)%['
+		if nonarraybase then
+			if isPrimitive[nonarraybase] then 
+				error("can't cast object to primitive array")
+			end
+		end
 		return self:_str(arg)._ptr
 	elseif t == 'cdata' then
+		-- leave int64's as-is to cast to jlong's
+		-- TODO test for all j* prim types
+		local ct = ffi.typeof(arg)
+		if ct == int64_t
+		or ct == uint64_t
+		then
+			return arg
+		end
 		return arg
 	elseif t == 'number' or t == 'boolean' then
 		if not isPrimitive[sig] then
@@ -392,6 +466,30 @@ function JNIEnv:_luaToJavaArgs(sigIndex, sig, ...)
 	if select('#', ...) == 0 then return end
 	return self:_luaToJavaArg(..., sig[sigIndex]),
 		self:_luaToJavaArgs(sigIndex+1, sig, select(2, ...))
+end
+
+function JNIEnv:_javaToLuaArg(value, returnType)
+	if returnType == 'void' then return end
+	if returnType == 'boolean' then
+		return value ~= 0
+	end
+	if isPrimitive[returnType] then return value end
+
+	-- if Java returned null then return Lua nil
+	-- ... if the JNI is returning null object results as NULL pointers ...
+	-- ... and the JNI itself segfaults when it gets passed a NULl that it doesn't like ...
+	-- ... where else do I have to bulletproof calls to the JNI?
+	if value == nil then return nil end
+
+	-- convert / wrap the result
+	return JavaObject._createObjectForClassPath(
+		returnType,
+		{
+			env = self,
+			ptr = value,
+			classpath = returnType,
+		}
+	)
 end
 
 function JNIEnv:__tostring()

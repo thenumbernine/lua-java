@@ -16,4 +16,5 @@ public class Test {
 	public String ol(String c) { return "ol_c"; }
 	public String ol(Object d) { return "ol_d"; }
 	public String ol(char[] e) { return "ol_e"; }
+	public String ol(long a) { return "ol_f"; }
 }

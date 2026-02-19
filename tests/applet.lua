@@ -50,7 +50,11 @@ local thread = LiteThread{
 	print'THREAD DONE'
 ]=],
 }
-local runnable = J.TestNativeRunnable:_new(thread.funcptr, J._vm._ptr)
+local ffi = require 'ffi'
+local runnable = J.TestNativeRunnable:_new(
+	ffi.cast('jlong', thread.funcptr),
+	ffi.cast('jlong', J._vm._ptr)
+)
 --[[ run in same thread ... blocks and doesn't show a window.  just shows a preview of one in alt+tab...
 runnable:run()
 thread:showErr()

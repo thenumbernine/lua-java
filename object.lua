@@ -127,27 +127,7 @@ function JavaObject:_javaToString()
 end
 
 function JavaObject:_instanceof(classTo)
-	local env = self._env
-	if type(classTo) == 'string' then
-		local classpath = classTo
-		classTo = env:_findClass(classpath)
-		if classTo == nil then
-			error("tried to cast to an unkonwn class "..classpath)
-		end
-	elseif type(classTo) == 'cdata' then
-		classTo = env:_getClassForJClass(classTo)
-	elseif type(classTo) == 'table' then
-		-- TODO assert it's a JavaClass?
-		-- TODO if it's a JavaObject then get its :_getClass() ?
-	else
-		error("can't cast to non-class "..tostring(classTo))
-	end
-	local canCast = env._ptr[0].IsAssignableFrom(
-		env._ptr,
-		self:_getClass()._ptr,
-		classTo._ptr
-	)
-	return canCast ~= 0, classTo
+	return self:_getClass():_isAssignableFrom(classTo)
 end
 
 function JavaObject:_cast(classTo)

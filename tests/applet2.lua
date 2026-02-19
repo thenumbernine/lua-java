@@ -78,7 +78,11 @@ local thread = LiteThread{
 	print('creating TestNativeRunnable for swing ui setup thread...')
 	assert(swingThread.funcptr, 'swingThread.funcptr')
 	assert(J._vm._ptr, 'J._vm._ptr')
-	local swingUISetupRunnable = J.TestNativeRunnable:_new(swingThread.funcptr, J._vm._ptr)
+	local ffi = require 'ffi'
+	local swingUISetupRunnable = J.TestNativeRunnable:_new(
+		ffi.cast('jlong', swingThread.funcptr),
+		ffi.cast('jlong', J._vm._ptr)
+	)
 
 	print('calling SwingUtilities:invokeAndWait on', swingUISetupRunnable)
 	J.javax.swing.SwingUtilities:invokeAndWait(swingUISetupRunnable)
@@ -91,7 +95,11 @@ local thread = LiteThread{
 print('creating TestNativeRunnable for swing invoke thread...')
 assert(thread.funcptr, 'thread.funcptr')
 assert(J._vm._ptr, 'J._vm._ptr')
-local swingInvokeAndWaitRunnable = J.TestNativeRunnable:_new(thread.funcptr, J._vm._ptr)
+local ffi = require 'ffi'
+local swingInvokeAndWaitRunnable = J.TestNativeRunnable:_new(
+	ffi.cast('jlong', thread.funcptr),
+	ffi.cast('jlong', J._vm._ptr)
+)
 
 print('creating java Thread...')
 local th = J.java.lang.Thread:_new(swingInvokeAndWaitRunnable)

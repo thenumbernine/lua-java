@@ -136,6 +136,8 @@ local J = jvm.jniEnv
 
 - `cl:_class()` = equivalent of java code `ClassName.class`, i.e. return the JavaObject jobject instance of a `java.lang.Class` that is associated with this jclass.
 
+- `cl:_isAssignableFrom(classTo)` = same as testing a class's instance's instanceof the `classTo`.
+
 - `cl:_method(args)` = returns a `JavaMethod` object for a `jmethodID`.
 - args:
 - - `name` = the method name

@@ -16,12 +16,14 @@ function JavaCallResolve:init(args)
 end
 
 function JavaCallResolve:__call(...)
-	-- TODO don't convert ... twice
+	-- TODO don't convert ... twice from Lua to Java
 	return assert(JavaCallResolve.resolve(self._options, ...))(...)
 end
 
 -- static method, used by JavaClass.__new also
 function JavaCallResolve.resolve(options, thisOrClass, ...)
+	local env = thisOrClass._env
+
 	-- ok now ...
 	-- we gotta match up ... args with all the method option arsg
 
@@ -29,20 +31,33 @@ function JavaCallResolve.resolve(options, thisOrClass, ...)
 	local bestOption
 	local bestScore = math.huge
 	for i,option in ipairs(options) do
+		local sig = option._sig
 		-- sig[1] is the return type
 		-- call args #1 is the this-or-class
 		-- the rest will match up
-		if #option._sig == numArgs then
-
+		if #sig == numArgs then
 			-- now test if casting works ...
-			-- TODO this is incentive to store sig as JavaClasses
+			-- TODO calc score from dist of classes
+			local canUse = true
+			for i=2,numArgs do
+print('arg #'..(i-1)..' = '..tostring((select(i-1, ...))))
+print('vs sig', sig[i])
+				if not env:_canConvertLuaToJavaArg(
+					select(i-1, ...),
+					sig[i]
+				) then
+					canUse = false
+					break
+				end
+			end
 
-
-			-- TODO calculate score based on how far away coercion is
-			local score = 0
-			if score < bestScore then
-				bestScore = score
-				bestOption = option
+			if canUse then
+				-- TODO calculate score based on how far away coercion is
+				local score = 0
+				if score < bestScore then
+					bestScore = score
+					bestOption = option
+				end
 			end
 		end
 	end
