@@ -450,8 +450,26 @@ function JNIEnv:_canConvertLuaToJavaArg(arg, sig)
 		-- then true & convert below
 
 		if ctname:match'%*' then
-			-- TODO if it's a pointer then try to convert it to a JavaObject and then try to match it ...
-io.stderr:write("idk how to check conversion for namespace matching from pointers yet ... but it should start with converting the pointer to a JavaObject ...\n")
+			-- TODO casting from boxed types to prims? is that a thing?
+			if isPrimitive[sig] then return false end
+
+			local toClassObj = self:_findClass(sig)
+
+			local jobject = arg
+			-- how to determine if it is a class or not
+			local envptr = self._ptr
+
+			-- if its class is a java.lang.Class then use it for assignability test
+			-- otherwise use its class for assignability test
+			local jclassToTest
+			local jclass = envptr[0].GetObjectClass(envptr, jobject)
+			if jclass == self._java_lang_Class._ptr then
+				jclassToTest = jobject
+			else
+				jclassToTest = jclass
+			end
+
+			return 0 ~= envptr[0].IsAssignableFrom(envptr, jclassToTest, toClassObj._ptr)
 		end
 
 		return false
@@ -496,11 +514,27 @@ function JNIEnv:_luaToJavaArg(arg, sig)
 		-- leave int64's as-is to cast to jlong's
 		-- TODO test for all j* prim types
 		local ct = ffi.typeof(arg)
-		if ct == int64_t
-		or ct == uint64_t
-		then
+		local ctname = tostring(ct)
+
+		-- if we are converting to a prim type
+		local ffiTypes = ffiTypesForPrim[sig]
+		if ffiTypes then
+			-- if we are coming from a prim type
+			if primNameForCTypes[ctname] then
+				-- convert ffi ctype prim to java prim
+				return ffiTypes.ctype(arg)
+			end
+			-- TODO else if we're coming from a boxed type, convert that
+
+			-- otherwise error
+			error("can't convert non-primitive to primitive")
+		end
+
+		if ctname:match'%*' then
 			return arg
 		end
+
+		-- cross our fingers, what's one more segfault?
 		return arg
 	elseif t == 'number' or t == 'boolean' then
 		local ffiTypes = ffiTypesForPrim[sig]
