@@ -1,5 +1,4 @@
 #!/usr/bin/env luajit
-local ffi = require 'ffi'
 local os = require 'ext.os'
 
 -- build the jni
@@ -35,26 +34,13 @@ print('parent thread pthread_self', pthread.pthread_self())
 local LiteThread = require 'thread.lite'
 local thread = LiteThread{
 	code = [=[
-local ffi = require 'ffi'
-local assert = require 'ext.assert'
-local pthread = require 'ffi.req' 'c.pthread'
-require 'java.ffi.jni'	-- needed before ffi.cdef
+local J = require 'java.vm'{ptr=arg}.jniEnv
 
+local pthread = require 'ffi.req' 'c.pthread'
 local childThread = pthread.pthread_self()
 print('child thread, pthread_self', childThread)
 
 print('hello from child thread Lua, arg', arg)
-local jvmPtr = ffi.cast('JavaVM*', arg)
-print('jvmPtr', jvmPtr)
-
-
-local J = require 'java.vm'{ptr=jvmPtr}.jniEnv
-
-
--- TODO everything above here can be put inside a JavaThread class
--- too bad it is dependent on the TestNativeRunnable java class to be there ...
--- ... would be nice to do it without any extra Java.
-
 
 print('J', J)
 print('J.java', J.java)
@@ -68,19 +54,10 @@ J:_checkExceptions()
 ]=],
 }
 
-local runnable = J.TestNativeRunnable:_new(
-	ffi.cast('jlong', thread.funcptr),
-	ffi.cast('jlong', ffi.cast('void*', J._vm._ptr))
+local th = J.java.lang.Thread:_new(
+	J.TestNativeRunnable:_new(thread.funcptr, J._vm._ptr)
 )
-
---[[ run in same thread and quit - for testing
-runnable:run()
-thread:showErr()
---]]
--- [[ run on a new Java thread
-local th = J.java.lang.Thread:_new(runnable)
 print('thread', th)
 th:start()
 th:join()
 thread:showErr()
---]]

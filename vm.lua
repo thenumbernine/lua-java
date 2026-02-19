@@ -5,18 +5,22 @@ local class = require 'ext.class'
 local table = require 'ext.table'
 local assert = require 'ext.assert'
 local io = require 'ext.io'
-local path = require 'ext.path'
 local JNIEnv = require 'java.jnienv'
 
 
--- how to know which jvm to load?
--- this needs to be done only once per app, where to do it?
-local javalinkpath = io.readproc'which java'
-local javaBinaryPath = io.readproc('readlink -f '..javalinkpath)
+local javaHome = os.getenv'JAVA_HOME'
+if not javaHome then
+	-- how to know which jvm to load?
+	-- this needs to be done only once per app, where to do it?
+	local javaLinkPath = io.readproc'which java'
+	-- TODO what if it's not a symlink ... ?
+	local javaBinaryPath = io.readproc('readlink -f '..javaLinkPath)
 --DEBUG:print('javaBinaryPath', javaBinaryPath)
-local javabindir = path(javaBinaryPath):getdir()	-- java ... /bin/
-local javarootdir = javabindir:getdir()				-- java ...
-local jni = ffi.load((javarootdir/'lib/server/libjvm.so').path)
+	local path = require 'ext.path'
+	local javabindir = path(javaBinaryPath):getdir()	-- java ... /bin/
+	javaHome = javabindir:getdir().path				-- java ...
+end
+local jni = ffi.load(javaHome..'/lib/server/libjvm.so')
 
 
 local JavaVM = class()
@@ -38,13 +42,10 @@ function JavaVM:init(args)
 	local jniEnvPtrArr = ffi.new'JNIEnv*[1]'
 
 	if args.ptr then
-		-- reattach an old JavaVM
-
-		local jvmPtr = args.ptr
+		-- reattach to an old JavaVM*
+		local jvmPtr = ffi.cast('JavaVM*', args.ptr)
 		-- assert/assume it is cdata of JavaVM*
 		assert.eq(ffi.C.JNI_OK, jvmPtr[0].GetEnv(jvmPtr, ffi.cast('void**', jniEnvPtrArr), version))
-		print('jvmPtr GetEnv', jniEnvPtrArr[0])
-
 	else
 		-- create a new JavaVM:
 
