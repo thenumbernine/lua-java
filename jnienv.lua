@@ -552,8 +552,16 @@ function JNIEnv:_canConvertLuaToJavaArg(arg, sig)
 		-- then true & convert below
 
 		if ctname:match'%*' then
+			-- lazy / special case for when unboxedSig=='long' only:
+			-- this way I can pass ffi pointers to java longs without having to cast them to ffi pointers first.
+			if sig == 'long' then
+				return true
+			end
+
 			-- TODO casting from boxed types to prims? is that a thing?
-			if isPrimitive[sig] then return false end
+			if isPrimitive[sig] then 
+				return false 
+			end
 
 			local toClassObj = self:_findClass(sig)
 
@@ -664,6 +672,13 @@ function JNIEnv:_luaToJavaArg(arg, sig)
 				return primInfo.ctype(arg)
 			end
 			-- TODO else if we're coming from a boxed type, convert that
+
+			-- special case, auto-convert pointers to longs
+			if unboxedSig == 'long'
+			and ctname:match'%*' 
+			then
+				return arg
+			end
 
 			-- otherwise error
 			error("can't convert non-primitive to primitive")

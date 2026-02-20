@@ -36,6 +36,13 @@ function JavaArray:init(args)
 
 	-- do super last because it write-protects the object for java namespace lookup __newindex
 	JavaArray.super.init(self, args)
+	local JavaObject__newindex = getmetatable(self).__newindex
+	getmetatable(self).__newindex = function(self, k, v)
+		if type(k) == 'number' then
+			return self:_set(k, v)
+		end
+		JavaObject__newindex(self, k, v)
+	end
 end
 
 function JavaArray:__len()
@@ -106,7 +113,6 @@ function JavaArray:_set(i, v)
 	env:_checkExceptions()
 end
 
--- TODO fallthrough to array fields in JavaObject's __index?
 function JavaArray:__index(k)
 	local v = JavaArray[k]
 	if v ~= nil then return v end
@@ -114,14 +120,9 @@ function JavaArray:__index(k)
 	if type(k) == 'number' then
 		return self:_get(k)
 	end
-end
 
-function JavaArray:__newindex(k, v)
-	if type(k) == 'number' then
-		return self:_set(k, v)
-	end
-
-	rawset(self, k, v)
+	-- fallthrough to array fields in JavaObject's __index
+	return JavaArray.super.__index(self, k)
 end
 
 return JavaArray

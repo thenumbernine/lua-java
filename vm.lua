@@ -23,7 +23,9 @@ args:
 
 	-or- build a new one with...
 
-	props = key/value of props to set with -D
+	optionList = list of option strings
+	options = key/value of options to append ${k}=${v}
+	props = key/value of props to append -D${k}=${v}
 --]]
 function JavaVM:init(args)
 	args = args or {}
@@ -45,13 +47,26 @@ function JavaVM:init(args)
 		-- save these separately so lua doesn't gc them
 		self.optionStrings = table()
 		self.optionTable = table()
+		local function addOption(optionStr)
+			local str = tostring(optionStr)
+			self.optionStrings:insert(str)
+			local option = ffi.new'JavaVMOption'
+			option.optionString = ffi.cast('char*', str)
+			self.optionTable:insert(option)
+		end
+		if args.optionList then
+			for _,option in ipairs(args.optionList) do
+				addOption(option)
+			end
+		end
+		if args.options then
+			for k,v in pairs(args.options) do
+				addOption(k..'='..v)
+			end
+		end
 		if args.props then
 			for k,v in pairs(args.props) do
-				local str = '-D'..k..'='..v
-				self.optionStrings:insert(str)
-				local option = ffi.new'JavaVMOption'
-				option.optionString = ffi.cast('char*', str)
-				self.optionTable:insert(option)
+				addOption('-D'..k..'='..v)
 			end
 		end
 		self.options = ffi.new('JavaVMOption[?]', #self.optionTable, self.optionTable)

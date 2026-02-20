@@ -10,7 +10,6 @@ local jvm = JVM{
 		['java.library.path'] = '.',
 	}
 }
-local J = jvm.jniEnv
 
 local pthread = require 'ffi.req' 'c.pthread'
 print('parent thread pthread_self', pthread.pthread_self())
@@ -38,13 +37,8 @@ local thread = LiteThread{
 ]=],
 }
 
-local ffi = require 'ffi'
-local th = J.java.lang.Thread:_new(
-	J.io.github.thenumbernine.NativeRunnable:_new(	
-		ffi.cast('jlong', thread.funcptr),
-		ffi.cast('jlong', J._vm._ptr)
-	)
-)
+local J = jvm.jniEnv
+local th = J.java.lang.Thread:_new(J.io.github.thenumbernine.NativeRunnable:_new(thread.funcptr, J._vm._ptr))
 print('thread', th)
 th:start()
 th:join()

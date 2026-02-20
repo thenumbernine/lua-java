@@ -1,7 +1,6 @@
 #!/usr/bin/env luajit
 
--- build
-require 'java.tests.nativerunnable'
+require 'java.tests.nativerunnable'	-- build
 
 local JVM = require 'java.vm'
 local jvm = JVM{
@@ -10,12 +9,12 @@ local jvm = JVM{
 		['java.library.path'] = '.',
 	}
 }
-local J = jvm.jniEnv
 
 local LiteThread = require 'thread.lite'
 local thread = LiteThread{
 	code = [=[
 	local J = require 'java.vm'{ptr=arg}.jniEnv
+	print('J._ptr', J._ptr)	-- changes from the vm's GetEnv call, which wouldn't happen if it was run on the same thread...
 
 	local JFrame = J.javax.swing.JFrame
 	local frame = JFrame:_new'HelloWorldSwing Example'
@@ -33,10 +32,12 @@ local thread = LiteThread{
 	print'THREAD DONE'
 ]=],
 }
-local ffi = require 'ffi'
-local runnable = J.io.github.thenumbernine.NativeRunnable:_new(
-	ffi.cast('jlong', thread.funcptr),
-	ffi.cast('jlong', J._vm._ptr)
-)
+
+local J = jvm.jniEnv
+print('J._ptr', J._ptr)
+local runnable = J.io.github.thenumbernine.NativeRunnable:_new(thread.funcptr, J._vm._ptr)
+-- looks like the Runnable sees a different JNIEnv,
+-- meaning 'invokeAndWait' is probably creating a new thread underneath,
+-- even if it is blocking until the thread finishes.
 J.javax.swing.SwingUtilities:invokeAndWait(runnable)
 thread:showErr()
