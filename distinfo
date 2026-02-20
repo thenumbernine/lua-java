@@ -24,7 +24,6 @@ files = {
 	"tests/io/github/thenumbernine/NativeRunnable.java",
 	"tests/TestRunRunnable.java",
 	"tests/applet.lua",
-	"tests/applet2.lua",
 	"tests/inheritence.lua",
 	"tests/nativerunnable.lua",
 	"tests/primitives.lua",

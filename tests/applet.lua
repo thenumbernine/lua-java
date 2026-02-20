@@ -18,17 +18,17 @@ local thread = LiteThread{
 	local J = require 'java.vm'{ptr=arg}.jniEnv
 
 	local JFrame = J.javax.swing.JFrame
-	local frame = JFrame:_new'HelloWorldSwing'
+	local frame = JFrame:_new'HelloWorldSwing Example'
 	frame:setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
 
-	--[[
 	local JLabel = J.javax.swing.JLabel
-	local label = JLabel:_new'Hello, World!'
-	frame:getContentPane():add(label)
-	--]]
+	local label = JLabel:_new'Hello World!'
+	frame:add(label)
 
-	frame:pack()	-- causes "IncompatibleClassChangeError"
-	frame:setVisible(true)
+	frame:setSize(300, 200)				-- you need to call one or the other
+	--frame:pack()
+	frame:setLocationRelativeTo(nil)	-- puts it in the middle
+	frame:setVisible(true)				-- shows it
 
 	print'THREAD DONE'
 ]=],
@@ -38,21 +38,5 @@ local runnable = J.io.github.thenumbernine.NativeRunnable:_new(
 	ffi.cast('jlong', thread.funcptr),
 	ffi.cast('jlong', J._vm._ptr)
 )
---[[ run in same thread ... blocks and doesn't show a window.  just shows a preview of one in alt+tab...
-runnable:run()
+J.javax.swing.SwingUtilities:invokeAndWait(runnable)
 thread:showErr()
---]]
--- [[ run on a new Java thread.  same.
-local th = J.java.lang.Thread:_new(runnable)
-print('thread', th)
-th:start()
-th:join()
-thread:showErr()
---]]
---[[ do invokeLater, but that doesnt block, and I am not Java who waits for all threads to finish ...
---J.javax.swing.SwingUtilities:invokeLater(runnable)
--- does this block until ui quit?
--- no?
-J.javax.swing.SwingUtilities:invokeAndWait(runnable)	-- segfaults
-thread:showErr()
---]]
