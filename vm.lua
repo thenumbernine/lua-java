@@ -8,10 +8,6 @@ local io = require 'ext.io'
 local JNIEnv = require 'java.jnienv'
 
 
-local javaHome = require 'java.build'.javaHome
-local jni = ffi.load(javaHome..'/lib/server/libjvm.so')
-
-
 local JavaVM = class()
 JavaVM.__name = 'JavaVM'
 
@@ -79,8 +75,11 @@ function JavaVM:init(args)
 		jvmargs.options = self.options
 		jvmargs.ignoreUnrecognized = ffi.C.JNI_FALSE
 
+		-- will this gc and unload dload? or nah, I can make it a local?
+		self.jni = ffi.load(require 'java.build'.getJavaHome()..'/lib/server/libjvm.so')
+
 		local jvmPtrArr = ffi.new'JavaVM*[1]'
-		local result = jni.JNI_CreateJavaVM(jvmPtrArr, jniEnvPtrArr, jvmargs)
+		local result = self.jni.JNI_CreateJavaVM(jvmPtrArr, jniEnvPtrArr, jvmargs)
 		assert.eq(result, 0, 'JNI_CreateJavaVM')
 
 		if jvmPtrArr[0] == nil then error("failed to find a JavaVM*") end
