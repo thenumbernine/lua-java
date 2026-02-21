@@ -76,6 +76,19 @@ args:
 function JNIEnv:init(args)
 	self._ptr = assert.type(assert.index(args, 'ptr'), 'cdata', "expected a JNIEnv*")
 	self._vm = args.vm		-- jnienv will hold the vm just so the vm doesn't gc
+	if not self._vm then
+		-- make a JavaVM object around the pointer
+		local jvmPtrArr = ffi.new'JavaVM*[1]'
+		assert.eq(ffi.C.JNI_OK, self._ptr[0].GetJavaVM(self._ptr, jvmPtrArr))
+		local jvmPtr = jvmPtrArr[0]
+		if jvmPtr == nil then
+			-- if I can't get the JavaVM* back then no problem, except that I can't do multithreading
+			-- but for API consistentcy let's make sure it works
+			error("couldn't get JavaVM* back from JNIEnv*")
+		end
+		local JavaVM = require 'java.vm'
+		self._vm = JavaVM{ptr = jvmPtr}
+	end
 
 	self._classesLoaded = {}
 

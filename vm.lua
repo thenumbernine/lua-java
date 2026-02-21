@@ -15,9 +15,11 @@ local jni = ffi.load(javaHome..'/lib/server/libjvm.so')
 local JavaVM = class()
 JavaVM.__name = 'JavaVM'
 
+JavaVM.version = ffi.C.JNI_VERSION_1_6
+
 --[[
 args:
-	version, defaults to JNI_VERSION_1_6
+	version optional, defaults to JavaVM.version which defaults to JNI_VERSION_1_6
 
 	ptr = reconstruct our JavaVM object from a JavaVM ffi cdata JNI pointer
 
@@ -29,7 +31,7 @@ args:
 --]]
 function JavaVM:init(args)
 	args = args or {}
-	local version = args.version or ffi.C.JNI_VERSION_1_6
+	self.version = args.version
 	local jniEnvPtrArr = ffi.new'JNIEnv*[1]'
 
 	if args.ptr then
@@ -37,7 +39,7 @@ function JavaVM:init(args)
 		local jvmPtr = ffi.cast('JavaVM*', args.ptr)
 		self._ptr = jvmPtr
 		-- assert/assume it is cdata of JavaVM*
-		assert.eq(ffi.C.JNI_OK, jvmPtr[0].GetEnv(jvmPtr, ffi.cast('void**', jniEnvPtrArr), version))
+		assert.eq(ffi.C.JNI_OK, jvmPtr[0].GetEnv(jvmPtr, ffi.cast('void**', jniEnvPtrArr), self.version))
 
 		-- if we are creating from an old pointer then we don't want __gc to cleanup so
 		function self:destroy() end
@@ -72,7 +74,7 @@ function JavaVM:init(args)
 		self.options = ffi.new('JavaVMOption[?]', #self.optionTable, self.optionTable)
 
 		local jvmargs = ffi.new'JavaVMInitArgs'
-		jvmargs.version = version
+		jvmargs.version = self.version
 		jvmargs.nOptions = #self.optionTable
 		jvmargs.options = self.options
 		jvmargs.ignoreUnrecognized = ffi.C.JNI_FALSE
